@@ -1,0 +1,1901 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL PMS SAAS - Phase 6 implemented operations",
+    "version": "0.14.0",
+    "description": "Operations implemented in Phase 6 package P06-01 (reservation reads and unconfirmed drafts, guest registry). Confirmation/modification/cancellation and revision consumption remain unimplemented."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "hotel_session"
+      }
+    },
+    "parameters": {
+      "TenantId": {
+        "name": "tenantId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PropertyId": {
+        "name": "propertyId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ReservationId": {
+        "name": "reservationId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "GuestId": {
+        "name": "guestId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Cursor": {
+        "name": "cursor",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50
+        }
+      },
+      "Search": {
+        "name": "search",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 100
+        }
+      },
+      "Csrf": {
+        "name": "x-csrf-token",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 32
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128
+        }
+      },
+      "ItemId": {
+        "name": "itemId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "RevisionId": {
+        "name": "revisionId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Fixed error code, localized message key, correlation id and bounded details without secrets",
+        "headers": {
+          "X-Correlation-Id": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "correlation_id"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "Period": {
+        "type": "object",
+        "required": [
+          "arrival",
+          "departure"
+        ],
+        "properties": {
+          "arrival": {
+            "type": "string",
+            "format": "date"
+          },
+          "departure": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "Occupancy": {
+        "type": "object",
+        "required": [
+          "adults"
+        ],
+        "properties": {
+          "adults": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "child_ages": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 17
+            }
+          }
+        }
+      },
+      "ReservationSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "state",
+          "version",
+          "item_states",
+          "item_count"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "DIRECT",
+              "OTA",
+              "IMPORT"
+            ]
+          },
+          "state": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "item_states": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "item_count": {
+            "type": "integer"
+          }
+        }
+      },
+      "ReservationList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/ReservationSummary"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "StaySegmentView": {
+        "type": "object",
+        "required": [
+          "id",
+          "start_date",
+          "end_date"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ReservationItemView": {
+        "type": "object",
+        "required": [
+          "id",
+          "period",
+          "occupancy",
+          "quantity",
+          "state",
+          "version",
+          "segments"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "occupancy": {
+            "$ref": "#/components/schemas/Occupancy"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaySegmentView"
+            }
+          }
+        }
+      },
+      "ReservationGuestView": {
+        "type": "object",
+        "required": [
+          "guest_id",
+          "role",
+          "full_name"
+        ],
+        "properties": {
+          "guest_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "LEAD",
+              "ACCOMPANYING"
+            ]
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "gender": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "FEMALE",
+              "MALE",
+              null
+            ]
+          }
+        }
+      },
+      "ReservationDetail": {
+        "type": "object",
+        "required": [
+          "reservation",
+          "items",
+          "guests"
+        ],
+        "properties": {
+          "reservation": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReservationItemView"
+            }
+          },
+          "guests": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ReservationGuestView"
+            },
+            "description": "null when the caller lacks guest.read"
+          }
+        }
+      },
+      "DraftItemInput": {
+        "type": "object",
+        "required": [
+          "period",
+          "occupancy"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "occupancy": {
+            "$ref": "#/components/schemas/Occupancy"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        }
+      },
+      "DraftGuestInput": {
+        "type": "object",
+        "required": [
+          "guest_id"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "guest_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "LEAD",
+              "ACCOMPANYING"
+            ]
+          }
+        }
+      },
+      "DraftInput": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "DIRECT",
+              "OTA",
+              "IMPORT"
+            ]
+          },
+          "channel_connection_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "external_booking_key": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/DraftItemInput"
+            }
+          },
+          "guests": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/DraftGuestInput"
+            }
+          }
+        }
+      },
+      "DraftResult": {
+        "type": "object",
+        "required": [
+          "reservation"
+        ],
+        "properties": {
+          "reservation": {
+            "type": "object",
+            "required": [
+              "id",
+              "source",
+              "state",
+              "version"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "source": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              },
+              "version": {
+                "type": "integer"
+              },
+              "external_booking_key": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "Guest": {
+        "type": "object",
+        "required": [
+          "id",
+          "full_name",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": "integer"
+          },
+          "gender": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "FEMALE",
+              "MALE",
+              null
+            ]
+          }
+        }
+      },
+      "GuestList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/Guest"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "GuestInput": {
+        "type": "object",
+        "required": [
+          "full_name"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "email",
+            "maxLength": 320
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 40
+          },
+          "country_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 2,
+            "maxLength": 2
+          },
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 16
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "gender": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "FEMALE",
+              "MALE",
+              null
+            ]
+          }
+        }
+      },
+      "GuestResult": {
+        "type": "object",
+        "required": [
+          "guest"
+        ],
+        "properties": {
+          "guest": {
+            "$ref": "#/components/schemas/Guest"
+          }
+        }
+      },
+      "ConfirmItemInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id",
+          "price_snapshot_id"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "price_snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ConfirmInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reservation_id",
+          "inventory_version",
+          "items"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inventory_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/ConfirmItemInput"
+            }
+          }
+        }
+      },
+      "ModifyItemInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "occupancy": {
+            "$ref": "#/components/schemas/Occupancy"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "price_snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ModifyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "items"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/ModifyItemInput"
+            }
+          }
+        }
+      },
+      "CancelInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "reason"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        }
+      },
+      "CommitmentResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "state",
+          "version",
+          "item_ids",
+          "inventory_version",
+          "replayed"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "item_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_version": {
+            "type": "integer"
+          },
+          "inventory_version": {
+            "type": "integer"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DraftDeferredError": {
+        "type": "object",
+        "description": "ConfirmReservation/ModifyReservation/CancelItem are implemented by P06-02; draft endpoint remains separate."
+      },
+      "GroupAllotmentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "product_id",
+          "period",
+          "quantity",
+          "inventory_version"
+        ],
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "inventory_version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "GroupAllotmentResult": {
+        "type": "object",
+        "required": [
+          "allotment",
+          "allocation_count",
+          "inventory_version"
+        ],
+        "properties": {
+          "allotment": {
+            "type": "object",
+            "required": [
+              "id",
+              "reservation_id",
+              "product_id",
+              "period",
+              "quantity",
+              "state"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reservation_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "product_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "period": {
+                "$ref": "#/components/schemas/Period"
+              },
+              "quantity": {
+                "type": "integer"
+              },
+              "state": {
+                "type": "string"
+              }
+            }
+          },
+          "allocation_count": {
+            "type": "integer"
+          },
+          "inventory_version": {
+            "type": "integer"
+          }
+        }
+      },
+      "GroupPickupInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id",
+          "price_snapshot_id"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "price_snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "GroupPickupResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "item_id",
+          "state",
+          "moved_allocations",
+          "inventory_version"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "moved_allocations": {
+            "type": "integer"
+          },
+          "inventory_version": {
+            "type": "integer"
+          }
+        }
+      },
+      "SplitItemInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "split_date",
+          "first_price_snapshot_id",
+          "second_price_snapshot_id"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "split_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "first_price_snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "second_price_snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "SplitItemResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "first_item_id",
+          "second_item_id",
+          "state",
+          "inventory_version"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "first_item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "second_item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "inventory_version": {
+            "type": "integer"
+          }
+        }
+      },
+      "NoShowInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "reason"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        }
+      },
+      "NoShowResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "item_id",
+          "state",
+          "item_version",
+          "inventory_version"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "item_version": {
+            "type": "integer"
+          },
+          "inventory_version": {
+            "type": "integer"
+          }
+        }
+      },
+      "ReprocessResult": {
+        "type": "object",
+        "required": [
+          "outcome",
+          "replayed"
+        ],
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "CREATED",
+              "APPLIED",
+              "CANCELLED",
+              "DUPLICATE",
+              "EXCEPTION"
+            ]
+          },
+          "error_code": {
+            "type": "string"
+          },
+          "exception_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "inventory_version": {
+            "type": "integer"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ImportInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode",
+          "source",
+          "file_name",
+          "content_type",
+          "content"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "DRY_RUN",
+              "APPLY"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "UPLOAD",
+              "FEED"
+            ]
+          },
+          "file_name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "content_type": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 262144
+          },
+          "external_id": {
+            "type": "string",
+            "maxLength": 120
+          }
+        }
+      },
+      "ImportResult": {
+        "type": "object",
+        "required": [
+          "mode",
+          "source",
+          "rows_total",
+          "rows_accepted",
+          "rows_rejected",
+          "rows_duplicate",
+          "rows",
+          "replayed"
+        ],
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "file_name": {
+            "type": "string"
+          },
+          "rows_total": {
+            "type": "integer"
+          },
+          "rows_accepted": {
+            "type": "integer"
+          },
+          "rows_rejected": {
+            "type": "integer"
+          },
+          "rows_duplicate": {
+            "type": "integer"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "line_no",
+                "status"
+              ],
+              "properties": {
+                "line_no": {
+                  "type": "integer"
+                },
+                "external_key": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": "string"
+                },
+                "error_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/tenants/{tenantId}/properties/{propertyId}/reservations": {
+      "get": {
+        "operationId": "ListReservations",
+        "summary": "ListReservations",
+        "x-permission": "reservation.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservations in the property",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "ConfirmReservation",
+        "summary": "ConfirmReservation",
+        "x-permission": "reservation.create",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reservation confirmed with commitment, price snapshot and inventory version bump",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitmentResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/drafts": {
+      "post": {
+        "operationId": "CreateReservationDraft",
+        "summary": "CreateReservationDraft",
+        "x-permission": "reservation.create",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Unconfirmed draft created; no inventory effect",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}": {
+      "get": {
+        "operationId": "GetReservation",
+        "summary": "GetReservation",
+        "x-permission": "reservation.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservation detail; guests hidden without guest.read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "ModifyReservation",
+        "summary": "ModifyReservation",
+        "x-permission": "reservation.modify",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModifyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reservation modified atomically; previous commitment preserved on failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitmentResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/guests": {
+      "get": {
+        "operationId": "ListGuests",
+        "summary": "ListGuests",
+        "x-permission": "guest.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Search"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Guest registry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateGuest",
+        "summary": "CreateGuest",
+        "x-permission": "guest.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuestInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Guest created; never merged by name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/guests/{guestId}": {
+      "get": {
+        "operationId": "GetGuest",
+        "summary": "GetGuest",
+        "x-permission": "guest.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/GuestId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Guest record",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservation-items/{itemId}/cancel": {
+      "post": {
+        "operationId": "CancelItem",
+        "summary": "CancelItem",
+        "x-permission": "reservation.cancel",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ItemId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item cancelled and future commitment released",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitmentResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/group-allotment": {
+      "post": {
+        "operationId": "CreateGroupAllotment",
+        "summary": "CreateGroupAllotment",
+        "x-permission": "reservation.modify",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupAllotmentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Group allotment secured atomically under the reservation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupAllotmentResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/group-allotment/pickup": {
+      "post": {
+        "operationId": "PickupGroupAllotment",
+        "summary": "PickupGroupAllotment",
+        "x-permission": "reservation.modify",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupPickupInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pickup moves the secured allocations to a confirmed item without duplication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupPickupResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservation-items/{itemId}/split": {
+      "post": {
+        "operationId": "SplitReservationItem",
+        "summary": "SplitReservationItem",
+        "x-permission": "reservation.modify",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ItemId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SplitItemInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Split secures both segments atomically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitItemResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservation-items/{itemId}/no-show": {
+      "post": {
+        "operationId": "MarkItemNoShow",
+        "summary": "MarkItemNoShow",
+        "x-permission": "reservation.cancel",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ItemId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoShowInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mark a confirmed pre-arrival item as no-show; residents are rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoShowResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/inbox/{revisionId}/reprocess": {
+      "post": {
+        "operationId": "ReprocessChannelEvent",
+        "summary": "ReprocessChannelEvent",
+        "x-permission": "channel.reprocess",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/RevisionId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revision applied, duplicated or stored as a permanent exception",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReprocessResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/imports": {
+      "post": {
+        "operationId": "ImportReservations",
+        "summary": "ImportReservations",
+        "x-permission": "reservation.create",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bounded CSV import run (dry-run or apply) with per-row report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  }
+}

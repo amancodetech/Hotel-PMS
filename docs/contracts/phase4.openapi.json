@@ -1,0 +1,3703 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL PMS implemented Phase 4 property and resource contract",
+    "version": "0.12.0",
+    "description": "Implemented-only contract for P04 property groups, properties, locations, resource types and resources. Operations listed here exist in apps/api; planned V1 operations remain in v1.openapi.json and are not implied running. Property scoped routes require the x-property-ref header only when the acting grant is limited to selected properties; tenant isolation is enforced by runtime role RLS in addition to Application policy."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "hotel_session",
+        "description": "HttpOnly server-side session cookie; tokens are never placed in browser storage."
+      }
+    },
+    "parameters": {
+      "TenantId": {
+        "name": "tenantId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": "Must match the active tenant recorded in the server-side session."
+      },
+      "PropertyId": {
+        "name": "propertyId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "GroupId": {
+        "name": "groupId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "LocationId": {
+        "name": "locationId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ResourceId": {
+        "name": "resourceId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Csrf": {
+        "name": "x-csrf-token",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 32
+        }
+      },
+      "ProductId": {
+        "name": "productId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PoolId": {
+        "name": "poolId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "CompositionId": {
+        "name": "compositionId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ConnectionId": {
+        "name": "connectionId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Fixed error code, localized message key, correlation id and bounded details without secrets",
+        "headers": {
+          "X-Correlation-Id": {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message", "correlation_id", "details"],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          }
+        }
+      },
+      "PropertyGroupStatus": {
+        "type": "string",
+        "enum": ["ACTIVE", "ARCHIVED"]
+      },
+      "PropertyGroup": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "version", "code", "name", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "status": {
+            "$ref": "#/components/schemas/PropertyGroupStatus"
+          }
+        }
+      },
+      "PropertyGroupInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "name"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        }
+      },
+      "PropertyGroupUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version"],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "status": {
+            "$ref": "#/components/schemas/PropertyGroupStatus"
+          }
+        }
+      },
+      "PropertyGroupList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PropertyGroup"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "PropertyGroupResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["group"],
+        "properties": {
+          "group": {
+            "$ref": "#/components/schemas/PropertyGroup"
+          }
+        }
+      },
+      "Timezone": {
+        "type": "string",
+        "enum": ["Asia/Jakarta", "Asia/Makassar", "Asia/Jayapura"]
+      },
+      "Currency": {
+        "type": "string",
+        "enum": ["IDR", "USD"]
+      },
+      "PropertyStatus": {
+        "type": "string",
+        "enum": ["SETUP", "ACTIVE", "SUSPENDED", "ARCHIVED"]
+      },
+      "Property": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "code",
+          "name",
+          "group_id",
+          "timezone",
+          "base_currency",
+          "status",
+          "inventory_version",
+          "limits_profile_code"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "group_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "timezone": {
+            "$ref": "#/components/schemas/Timezone"
+          },
+          "base_currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PropertyStatus"
+          },
+          "inventory_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limits_profile_code": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "PropertyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "name", "timezone"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "timezone": {
+            "$ref": "#/components/schemas/Timezone"
+          },
+          "base_currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "group_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          }
+        }
+      },
+      "PropertyUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version"],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "group_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PropertyStatus"
+          }
+        }
+      },
+      "PropertyList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Property"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "PropertyResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["property"],
+        "properties": {
+          "property": {
+            "$ref": "#/components/schemas/Property"
+          }
+        }
+      },
+      "ResourceType": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "name_key"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16
+          },
+          "name_key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        }
+      },
+      "ResourceTypeList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceType"
+            },
+            "maxItems": 32
+          }
+        }
+      },
+      "LocationStatus": {
+        "type": "string",
+        "enum": ["ACTIVE", "INACTIVE"]
+      },
+      "Location": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "version", "code", "name", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "status": {
+            "$ref": "#/components/schemas/LocationStatus"
+          },
+          "parent_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "kind": {
+            "type": ["string", "null"],
+            "enum": [
+              "ZONE",
+              "BUILDING",
+              "WING",
+              "FLOOR",
+              "CLUSTER",
+              "SERVICE_AREA",
+              null
+            ]
+          },
+          "display_order": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        }
+      },
+      "LocationInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "name"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "parent_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "kind": {
+            "type": ["string", "null"],
+            "enum": [
+              "ZONE",
+              "BUILDING",
+              "WING",
+              "FLOOR",
+              "CLUSTER",
+              "SERVICE_AREA",
+              null
+            ]
+          },
+          "display_order": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        }
+      },
+      "LocationUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version"],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "status": {
+            "$ref": "#/components/schemas/LocationStatus"
+          },
+          "parent_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "kind": {
+            "type": ["string", "null"],
+            "enum": [
+              "ZONE",
+              "BUILDING",
+              "WING",
+              "FLOOR",
+              "CLUSTER",
+              "SERVICE_AREA",
+              null
+            ]
+          },
+          "display_order": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        }
+      },
+      "LocationList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Location"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "LocationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["location"],
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          }
+        }
+      },
+      "ResourceState": {
+        "type": "string",
+        "enum": ["ACTIVE", "INACTIVE", "RETIRED"]
+      },
+      "ResourceKind": {
+        "type": "string",
+        "enum": [
+          "ROOM",
+          "BED",
+          "VILLA",
+          "APARTMENT",
+          "HOUSE",
+          "SITE",
+          "TENT",
+          "CABIN"
+        ]
+      },
+      "Resource": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "code",
+          "type",
+          "capacity",
+          "state",
+          "housekeeping_state",
+          "maintenance_state",
+          "location_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "type": {
+            "$ref": "#/components/schemas/ResourceKind"
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "state": {
+            "$ref": "#/components/schemas/ResourceState"
+          },
+          "location_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "housekeeping_state": {
+            "type": "string",
+            "enum": ["CLEAN", "DIRTY", "INSPECTED"]
+          },
+          "maintenance_state": {
+            "type": "string",
+            "enum": ["NONE", "OOO", "OOS"]
+          },
+          "display_label": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "unit_details": {
+            "$ref": "#/components/schemas/UnitDetails"
+          },
+          "parent_resource_id": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "Physical parent resource. Create only: ROOM under an existing ACTIVE VILLA already containing ROOM children; does not convert atomic whole-only inventory."
+          }
+        }
+      },
+      "ResourceInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "type", "capacity"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "type": {
+            "$ref": "#/components/schemas/ResourceKind"
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "location_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "display_label": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "unit_details": {
+            "$ref": "#/components/schemas/UnitDetails"
+          },
+          "parent_resource_id": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "Physical parent resource. Create only: ROOM under an existing ACTIVE VILLA already containing ROOM children; does not convert atomic whole-only inventory."
+          }
+        }
+      },
+      "ResourceUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version"],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "location_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ResourceState"
+          },
+          "display_label": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "unit_details": {
+            "$ref": "#/components/schemas/UnitDetails"
+          }
+        }
+      },
+      "ResourceList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items", "next_cursor"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Resource"
+            },
+            "maxItems": 100
+          },
+          "next_cursor": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "ResourceResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["resource"],
+        "properties": {
+          "resource": {
+            "$ref": "#/components/schemas/Resource"
+          }
+        }
+      },
+      "ProductStatus": {
+        "type": "string",
+        "enum": ["DRAFT", "ACTIVE", "SUSPENDED", "RETIRED"]
+      },
+      "MealPlan": {
+        "type": "string",
+        "enum": ["NONE", "BREAKFAST"]
+      },
+      "Product": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "code",
+          "name",
+          "kind",
+          "occupancy_adults_min",
+          "occupancy_adults_max",
+          "occupancy_children_max",
+          "meal_plan",
+          "pool_id",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ResourceKind"
+          },
+          "occupancy_adults_min": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "occupancy_adults_max": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "occupancy_children_max": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "meal_plan": {
+            "$ref": "#/components/schemas/MealPlan"
+          },
+          "pool_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProductStatus"
+          },
+          "sharing_scope": {
+            "type": ["string", "null"],
+            "enum": ["MIXED", "FEMALE", "MALE", null],
+            "description": "Sharing policy for bed products created by the setup wizard; null means not a shared-room product."
+          }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "name", "kind"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ResourceKind"
+          },
+          "occupancy_adults_min": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "occupancy_adults_max": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "occupancy_children_max": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "meal_plan": {
+            "$ref": "#/components/schemas/MealPlan"
+          }
+        }
+      },
+      "ProductUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version"],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "occupancy_adults_min": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "occupancy_adults_max": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "occupancy_children_max": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "meal_plan": {
+            "$ref": "#/components/schemas/MealPlan"
+          },
+          "pool_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProductStatus"
+          }
+        }
+      },
+      "ProductList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "ProductResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["product"],
+        "properties": {
+          "product": {
+            "$ref": "#/components/schemas/Product"
+          }
+        }
+      },
+      "ProductCandidate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "product_id",
+          "resource_id",
+          "resource_type",
+          "created_at"
+        ],
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_type": {
+            "$ref": "#/components/schemas/ResourceKind"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProductCandidateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["resource_id"],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ProductCandidateList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductCandidate"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "ProductCandidateResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["candidate"],
+        "properties": {
+          "candidate": {
+            "$ref": "#/components/schemas/ProductCandidate"
+          }
+        }
+      },
+      "PoolStatus": {
+        "type": "string",
+        "enum": ["ACTIVE", "INACTIVE"]
+      },
+      "Pool": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "code",
+          "name",
+          "resource_type",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "resource_type": {
+            "$ref": "#/components/schemas/ResourceKind"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PoolStatus"
+          }
+        }
+      },
+      "PoolInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "name", "resource_type"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "resource_type": {
+            "$ref": "#/components/schemas/ResourceKind"
+          }
+        }
+      },
+      "PoolUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version"],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "status": {
+            "$ref": "#/components/schemas/PoolStatus"
+          }
+        }
+      },
+      "PoolList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Pool"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "PoolResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pool"],
+        "properties": {
+          "pool": {
+            "$ref": "#/components/schemas/Pool"
+          }
+        }
+      },
+      "PoolMember": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pool_id",
+          "resource_id",
+          "resource_type",
+          "effective_from",
+          "effective_to"
+        ],
+        "properties": {
+          "pool_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_type": {
+            "$ref": "#/components/schemas/ResourceKind"
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "effective_to": {
+            "type": ["string", "null"],
+            "format": "date"
+          }
+        }
+      },
+      "PoolMemberInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["resource_id"],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "PoolMemberUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["effective_to"],
+        "properties": {
+          "effective_to": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "PoolMemberList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PoolMember"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "PoolMemberResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["member"],
+        "properties": {
+          "member": {
+            "$ref": "#/components/schemas/PoolMember"
+          }
+        }
+      },
+      "RemovedResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["removed"],
+        "properties": {
+          "removed": {
+            "type": "boolean",
+            "const": true
+          }
+        }
+      },
+      "CompositionStatus": {
+        "type": "string",
+        "enum": ["DRAFT", "ACTIVE", "RETIRED"]
+      },
+      "Composition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "product_id",
+          "version_number",
+          "effective_from",
+          "effective_to",
+          "status",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version_number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "effective_to": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CompositionStatus"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "CompositionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "product_id",
+          "effective_period",
+          "resource_ids",
+          "nested_version_ids"
+        ],
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "effective_period": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["arrival", "departure"],
+            "properties": {
+              "arrival": {
+                "type": "string",
+                "format": "date"
+              },
+              "departure": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          },
+          "resource_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 32,
+            "uniqueItems": true
+          },
+          "nested_version_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 32,
+            "uniqueItems": true
+          }
+        },
+        "anyOf": [
+          {
+            "properties": {
+              "resource_ids": {
+                "minItems": 1
+              }
+            }
+          },
+          {
+            "properties": {
+              "nested_version_ids": {
+                "minItems": 1
+              }
+            }
+          }
+        ]
+      },
+      "CompositionList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Composition"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "CompositionResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["composition"],
+        "properties": {
+          "composition": {
+            "$ref": "#/components/schemas/Composition"
+          }
+        }
+      },
+      "CompositionEdge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["position", "child_kind", "resource_id", "version_id"],
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "child_kind": {
+            "type": "string",
+            "enum": ["RESOURCE", "COMPOSITION"]
+          },
+          "resource_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "version_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          }
+        }
+      },
+      "CompositionLeaf": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["resource_id", "depth"],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "depth": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "CompositionDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["composition", "edges", "leaves"],
+        "properties": {
+          "composition": {
+            "$ref": "#/components/schemas/Composition"
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompositionEdge"
+            },
+            "maxItems": 64
+          },
+          "leaves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompositionLeaf"
+            },
+            "maxItems": 32
+          }
+        }
+      },
+      "CompositionActivateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason"],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 300
+          }
+        }
+      },
+      "CompositionLeafList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompositionLeaf"
+            },
+            "maxItems": 32
+          }
+        }
+      },
+      "ConnectionStatus": {
+        "type": "string",
+        "enum": ["DRAFT", "ACTIVE", "SUSPENDED", "RETIRED"]
+      },
+      "Connection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "provider_key",
+          "environment",
+          "channel_key",
+          "external_property_id",
+          "status",
+          "secret_ref_set",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider_key": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "environment": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "channel_key": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "external_property_id": {
+            "type": ["string", "null"],
+            "maxLength": 200
+          },
+          "status": {
+            "$ref": "#/components/schemas/ConnectionStatus"
+          },
+          "secret_ref_set": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ConnectionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "provider_key",
+          "environment",
+          "channel_key",
+          "secret_ref"
+        ],
+        "properties": {
+          "provider_key": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "environment": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "channel_key": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "external_property_id": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "secret_ref": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200,
+            "description": "Reference such as secret:name or vault:path; raw secrets are rejected."
+          }
+        }
+      },
+      "ConnectionList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Connection"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "ConnectionResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["connection"],
+        "properties": {
+          "connection": {
+            "$ref": "#/components/schemas/Connection"
+          }
+        }
+      },
+      "Mapping": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "channel_key",
+          "external_room_ref",
+          "external_rate_ref",
+          "occupancy",
+          "meal_plan_ref",
+          "internal_product_ref",
+          "internal_rate_ref",
+          "effective_at",
+          "status",
+          "mapping_version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel_key": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "external_room_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "external_rate_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "occupancy": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "meal_plan_ref": {
+            "type": ["string", "null"],
+            "maxLength": 200
+          },
+          "internal_product_ref": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "internal_rate_ref": {
+            "type": "null",
+            "description": "Rate plan mapping is completed in P05-01."
+          },
+          "effective_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["DRAFT", "ACTIVE", "RETIRED"]
+          },
+          "mapping_version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "MappingInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "channel_key",
+          "external_room_ref",
+          "external_rate_ref",
+          "occupancy"
+        ],
+        "properties": {
+          "channel_key": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "external_room_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "external_rate_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "occupancy": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "meal_plan_ref": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "internal_product_ref": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          }
+        }
+      },
+      "MappingList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mapping"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "MappingResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["mapping"],
+        "properties": {
+          "mapping": {
+            "$ref": "#/components/schemas/Mapping"
+          }
+        }
+      },
+      "Capability": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "channel_key",
+          "capability_code",
+          "status",
+          "authorization_status",
+          "adapter_version",
+          "checked_at",
+          "limitations"
+        ],
+        "properties": {
+          "channel_key": {
+            "type": "string"
+          },
+          "capability_code": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["DOCUMENTED", "TESTED", "UNSUPPORTED", "UNKNOWN"]
+          },
+          "authorization_status": {
+            "type": "string",
+            "enum": ["AUTHORIZED", "NOT_AUTHORIZED", "UNKNOWN"]
+          },
+          "adapter_version": {
+            "type": "string"
+          },
+          "checked_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "limitations": {}
+        }
+      },
+      "CapabilityList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Capability"
+            },
+            "maxItems": 200
+          }
+        }
+      },
+      "LocationTreeNodeV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "version", "code", "name", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "status": {
+            "$ref": "#/components/schemas/LocationStatus"
+          },
+          "parent_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "kind": {
+            "type": ["string", "null"],
+            "enum": [
+              "ZONE",
+              "BUILDING",
+              "WING",
+              "FLOOR",
+              "CLUSTER",
+              "SERVICE_AREA",
+              null
+            ]
+          },
+          "display_order": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "x-implementation-status": "IMPLEMENTED_LOCAL",
+        "description": "PSR-03 tree extension. Scoped parent, maximum depth 32; PATCH omission preserves, null detaches. Sort display_order/code/id."
+      },
+      "LocationTreeInputV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "name"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "parent_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "kind": {
+            "type": ["string", "null"],
+            "enum": [
+              "ZONE",
+              "BUILDING",
+              "WING",
+              "FLOOR",
+              "CLUSTER",
+              "SERVICE_AREA",
+              null
+            ]
+          },
+          "display_order": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "x-implementation-status": "IMPLEMENTED_LOCAL",
+        "description": "PSR-03 tree extension. Scoped parent, maximum depth 32; PATCH omission preserves, null detaches. Sort display_order/code/id."
+      },
+      "LocationTreeUpdateV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version"],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "status": {
+            "$ref": "#/components/schemas/LocationStatus"
+          },
+          "parent_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "kind": {
+            "type": ["string", "null"],
+            "enum": [
+              "ZONE",
+              "BUILDING",
+              "WING",
+              "FLOOR",
+              "CLUSTER",
+              "SERVICE_AREA",
+              null
+            ]
+          },
+          "display_order": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "x-implementation-status": "IMPLEMENTED_LOCAL",
+        "description": "PSR-03 tree extension. Scoped parent, maximum depth 32; PATCH omission preserves, null detaches. Sort display_order/code/id."
+      },
+      "LocationTreePageV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "x-implementation-status": "IMPLEMENTED_LOCAL",
+        "required": ["items", "ancestors", "next_cursor"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/LocationTreeNodeV2"
+            }
+          },
+          "ancestors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocationTreeNodeV2"
+            }
+          },
+          "next_cursor": {
+            "type": ["string", "null"],
+            "maxLength": 2048
+          }
+        },
+        "description": "PSR-03 tree extension. Scoped parent, maximum depth 32; PATCH omission preserves, null detaches. Sort display_order/code/id."
+      },
+      "UnitDetails": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "bedrooms_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "bathrooms_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "ArchiveImpact": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Read-only direct relationship counts scoped to the tenant/property. Historical relations are preserved and do not by themselves block resource retirement. Location children/resources and resource children, live commitments, open stays and unreleased channel exposure block archiving. A preview grants no permission to write; PATCH rechecks versions and relations under the property lock.",
+        "required": [
+          "entity_kind",
+          "entity_id",
+          "version",
+          "status",
+          "eligible",
+          "blockers",
+          "counts"
+        ],
+        "properties": {
+          "entity_kind": {
+            "type": "string",
+            "enum": ["LOCATION", "RESOURCE"]
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "INACTIVE", "RETIRED"]
+          },
+          "eligible": {
+            "type": "boolean"
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "LOCATION_CHILDREN",
+                "LOCATION_RESOURCES",
+                "RESOURCE_CHILDREN",
+                "LIVE_COMMITMENTS",
+                "OPEN_STAYS",
+                "CHANNEL_EXPOSURES",
+                "ALREADY_ARCHIVED"
+              ]
+            }
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "children",
+              "resources",
+              "products",
+              "compositions",
+              "pool_memberships",
+              "allocations",
+              "live_commitments",
+              "stays",
+              "open_stays",
+              "exposures",
+              "channel_exposures"
+            ],
+            "properties": {
+              "children": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "resources": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "products": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "compositions": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pool_memberships": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "allocations": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "live_commitments": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "stays": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "open_stays": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "exposures": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "channel_exposures": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/tenants/{tenantId}/property-groups": {
+      "get": {
+        "operationId": "ListPropertyGroups",
+        "summary": "ListPropertyGroups",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property groups in the active tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyGroupList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreatePropertyGroup",
+        "summary": "CreatePropertyGroup",
+        "x-permission": "property.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PropertyGroupInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Property group created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyGroupResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/property-groups/{groupId}": {
+      "patch": {
+        "operationId": "UpdatePropertyGroup",
+        "summary": "UpdatePropertyGroup",
+        "x-permission": "property.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/GroupId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PropertyGroupUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Property group updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyGroupResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties": {
+      "get": {
+        "operationId": "ListProperties",
+        "summary": "ListProperties",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Properties in the active tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateProperty",
+        "summary": "CreateProperty",
+        "x-permission": "property.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PropertyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Property created in SETUP status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}": {
+      "get": {
+        "operationId": "GetProperty",
+        "summary": "GetProperty",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property within scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "UpdateProperty",
+        "summary": "UpdateProperty",
+        "x-permission": "property.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PropertyUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Property updated with status transition checks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertyResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/resource-types": {
+      "get": {
+        "operationId": "ListResourceTypes",
+        "summary": "ListResourceTypes",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fixed resource type catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceTypeList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/locations": {
+      "get": {
+        "operationId": "ListLocations",
+        "summary": "ListLocations",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "name": "tree",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["true"]
+            }
+          },
+          {
+            "name": "parent_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "UUID or root; only with tree=true"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ZONE",
+                "BUILDING",
+                "WING",
+                "FLOOR",
+                "CLUSTER",
+                "SERVICE_AREA"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["display_order", "code", "name"],
+              "default": "display_order"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Locations in the property",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/LocationList"
+                    },
+                    {
+                      "$ref": "#/components/schemas/LocationTreePageV2"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "description": "Legacy flat list unchanged. In tree=true mode, q is literal case-insensitive substring on code/name, kind filters an existing location kind, sort is ascending display_order/code/id (default), code/id or name/code/id. All search/filter/sort parameters require tree=true. Cursor binds scope, parent, query, kind, order and tree revision; reject 400 on mismatch and 412 after mutation. Search applies to children of the specified parent."
+      },
+      "post": {
+        "operationId": "CreateLocation",
+        "summary": "CreateLocation",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Required if any parent_id, kind or display_order field is present. Legacy flat create remains compatible.",
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Location created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/locations/{locationId}": {
+      "patch": {
+        "operationId": "UpdateLocation",
+        "summary": "UpdateLocation",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/LocationId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Location updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "LOCATION_IN_USE; details contain scoped blockers and counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "description": "Changing an ACTIVE location to INACTIVE refuses children or resource relations. Rechecks under the property lock with optimistic version; no deletion or cascade."
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/resources": {
+      "get": {
+        "operationId": "ListResources",
+        "summary": "ListResources",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 1600
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["code", "label", "capacity"]
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ROOM",
+                "BED",
+                "VILLA",
+                "APARTMENT",
+                "HOUSE",
+                "SITE",
+                "TENT",
+                "CABIN"
+              ]
+            }
+          },
+          {
+            "name": "min_capacity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "bedrooms_count",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "bathrooms_count",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resources in the property ordered by creation keyset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "description": "Search inventory revision changed; restart the first page."
+          }
+        },
+        "description": "Scoped unit pages. With search/filter/sort: literal case-insensitive substring q over code, display_label and unit_details.notes; attributes are existing resource type, capacity and descriptive bedrooms/bathrooms. Ascending sort plus UUID tie breaker, null label falls back to code. Omitted filters retain legacy created_at/id order and cursor. Search cursors are HMAC authenticated, bound to scope/query/filters/order/inventory revision, and invalidated by relevant writes or API restart. Cursor mismatch is 400; changed revision is 412. No dynamic attribute engine."
+      },
+      "post": {
+        "operationId": "CreateResource",
+        "summary": "CreateResource",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Required for a non-null parent_resource_id; durable child creation replay only. Legacy standalone creation is unchanged.",
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created inside the property",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/resources/{resourceId}": {
+      "patch": {
+        "operationId": "UpdateResource",
+        "summary": "UpdateResource",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resource updated; RETIRED is terminal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RESOURCE_IN_USE; details contain scoped blockers and counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "description": "Changing a resource to INACTIVE or RETIRED refuses structural children, live/future commitments, open stays and unreleased channel exposures including UNKNOWN; historical allocations and product/composition links alone are preserved and do not block retirement. Rechecks under the property lock with optimistic version; no deletion or cascade."
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/products": {
+      "get": {
+        "operationId": "ListProducts",
+        "summary": "ListProducts",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListProducts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateProduct",
+        "summary": "CreateProduct",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "CreateProduct",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/products/{productId}": {
+      "patch": {
+        "operationId": "UpdateProduct",
+        "summary": "UpdateProduct",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ProductId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "UpdateProduct",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/products/{productId}/candidates": {
+      "get": {
+        "operationId": "ListProductCandidates",
+        "summary": "ListProductCandidates",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ProductId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListProductCandidates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductCandidateList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "AddProductCandidate",
+        "summary": "AddProductCandidate",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ProductId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductCandidateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "AddProductCandidate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductCandidateResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/products/{productId}/candidates/{resourceId}": {
+      "delete": {
+        "operationId": "RemoveProductCandidate",
+        "summary": "RemoveProductCandidate",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ProductId"
+          },
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Candidate removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemovedResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/pools": {
+      "get": {
+        "operationId": "ListPools",
+        "summary": "ListPools",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListPools",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoolList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreatePool",
+        "summary": "CreatePool",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoolInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "CreatePool",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoolResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/pools/{poolId}": {
+      "patch": {
+        "operationId": "UpdatePool",
+        "summary": "UpdatePool",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/PoolId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoolUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "UpdatePool",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoolResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/pools/{poolId}/members": {
+      "get": {
+        "operationId": "ListPoolMembers",
+        "summary": "ListPoolMembers",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/PoolId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListPoolMembers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoolMemberList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "AddPoolMember",
+        "summary": "AddPoolMember",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/PoolId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoolMemberInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "AddPoolMember",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoolMemberResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/pools/{poolId}/members/{resourceId}": {
+      "patch": {
+        "operationId": "EndPoolMember",
+        "summary": "EndPoolMember",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/PoolId"
+          },
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoolMemberUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "EndPoolMember",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoolMemberResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/compositions": {
+      "get": {
+        "operationId": "ListCompositions",
+        "summary": "ListCompositions",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListCompositions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompositionList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateComposition",
+        "summary": "CreateComposition",
+        "x-permission": "composition.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompositionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "CreateComposition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompositionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/compositions/{compositionId}/activate": {
+      "post": {
+        "operationId": "ActivateComposition",
+        "summary": "ActivateComposition",
+        "x-permission": "composition.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/CompositionId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompositionActivateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ActivateComposition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompositionDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/compositions/{compositionId}": {
+      "get": {
+        "operationId": "GetComposition",
+        "summary": "GetComposition",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/CompositionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GetComposition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompositionDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/compositions/{compositionId}/leaves": {
+      "get": {
+        "operationId": "ListCompositionLeaves",
+        "summary": "ListCompositionLeaves",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/CompositionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListCompositionLeaves",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompositionLeafList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections": {
+      "get": {
+        "operationId": "ListConnections",
+        "summary": "ListConnections",
+        "x-permission": "channel.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListConnections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateConnection",
+        "summary": "CreateConnection",
+        "x-permission": "channel.connection.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "CreateConnection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections/{connectionId}/capabilities": {
+      "get": {
+        "operationId": "ListConnectionCapabilities",
+        "summary": "ListConnectionCapabilities",
+        "x-permission": "channel.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ConnectionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListConnectionCapabilities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilityList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections/{connectionId}/mappings": {
+      "get": {
+        "operationId": "ListConnectionMappings",
+        "summary": "ListConnectionMappings",
+        "x-permission": "channel.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ConnectionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListConnectionMappings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections/{connectionId}/mapping": {
+      "put": {
+        "operationId": "SaveMapping",
+        "summary": "SaveMapping",
+        "x-permission": "channel.mapping.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ConnectionId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappingInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SaveMapping",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/locations/{locationId}/archive-preview": {
+      "get": {
+        "operationId": "PreviewLocationArchive",
+        "summary": "Preview archive relationships without writing",
+        "description": "Returns counts and blockers only. No guest data, write, deletion or cascading archive. Resource live commitments include unexpired holds; channel UNKNOWN remains blocking until withdrawal is proven.",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/LocationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped archive impact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveImpact"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/resources/{resourceId}/archive-preview": {
+      "get": {
+        "operationId": "PreviewResourceArchive",
+        "summary": "Preview archive relationships without writing",
+        "description": "Returns counts and blockers only. No guest data, write, deletion or cascading archive. Resource live commitments include unexpired holds; channel UNKNOWN remains blocking until withdrawal is proven.",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped archive impact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveImpact"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "x-psr-location-tree": {
+    "status": "IMPLEMENTED_LOCAL",
+    "implementation_package": "PSR-03",
+    "operations": {
+      "ListLocations": {
+        "query": {
+          "parent_id": "UUID or root; tree=true with omitted parent reads roots. Without tree=true use legacy flat list.",
+          "cursor": "opaque signed/scoped cursor; binds parent/order/tree revision; stale cursor rejected",
+          "limit": "integer 1..200, default 50"
+        },
+        "response": "LocationTreePageV2 only when tree=true; legacy LocationList otherwise"
+      },
+      "CreateLocation": {
+        "input": "LocationTreeInputV2",
+        "permission": "property.resource.manage",
+        "csrf": true,
+        "idempotency_key": "required for tree mode"
+      },
+      "UpdateLocation": {
+        "input": "LocationTreeUpdateV2",
+        "permission": "property.resource.manage",
+        "csrf": true,
+        "optimistic_version": "existing body.version; stale=412"
+      }
+    },
+    "invariants": [
+      "no-cross-property-parent",
+      "no-cycle-or-self-parent",
+      "bounded-ancestor-depth-32",
+      "inactive-parent-not-valid-for-new-unit-assignment",
+      "lock-property-before-parent-update"
+    ],
+    "cursor_lifetime": "Invalidated by tree mutation or API process restart; clients restart at the root/page one."
+  }
+}

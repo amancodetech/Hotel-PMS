@@ -1,0 +1,2439 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL PMS SaaS platform contract (Phase 12)",
+    "version": "0.32.0",
+    "description": "Phase 12 SaaS and customer lifecycle operations. Platform staff permissions are evaluated outside tenant membership; platform billing is administrative and never writes the hotel ledger (journal, business_day, folio_charge). Tenant reads of platform objects are limited to the tenant's own subscription, entitlements, usage and administrative invoices."
+  },
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "paths": {
+    "/platform/plans": {
+      "get": {
+        "operationId": "ListPlatformPlans",
+        "x-permission": "platform.read",
+        "summary": "List the plan catalog visible to platform staff.",
+        "responses": {
+          "200": {
+            "description": "Plan catalog.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreatePlatformPlan",
+        "x-permission": "subscription.manage",
+        "x-csrf": true,
+        "summary": "Create a plan shell before its first dated policy version.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlanInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plan created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanView"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/plans/{planCode}/policy-versions": {
+      "get": {
+        "operationId": "ListPlanPolicyVersions",
+        "x-permission": "platform.read",
+        "summary": "List dated, immutable plan policy versions.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlanCode"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Policy versions, newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyVersionList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreatePlanPolicyVersion",
+        "x-permission": "subscription.manage",
+        "x-csrf": true,
+        "summary": "Append a forward-dated policy version (limits and entitlements).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlanCode"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePolicyVersionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Policy version appended.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyVersionView"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/tenants/{tenantId}/subscription": {
+      "get": {
+        "operationId": "ReadPlatformSubscription",
+        "x-permission": "platform.read",
+        "summary": "Read a tenant subscription with entitlements, usage and entitlement history.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscription view.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformSubscriptionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/tenants/{tenantId}/entitlements": {
+      "post": {
+        "operationId": "SetPlatformEntitlement",
+        "x-permission": "subscription.manage",
+        "x-csrf": true,
+        "summary": "Set a tenant capability entitlement override; disabling never erases history.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetEntitlementInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entitlement applied.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntitlementSetResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/tenants/{tenantId}/usage": {
+      "get": {
+        "operationId": "ListPlatformUsage",
+        "x-permission": "platform.read",
+        "summary": "List usage counters (used vs declared limit) for a tenant.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage counters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "RecordPlatformUsage",
+        "x-permission": "subscription.manage",
+        "x-csrf": true,
+        "summary": "Idempotent usage metering with atomic declared-limit enforcement.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordUsageInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Usage recorded or replayed by idempotency key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordUsageResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/tenants/{tenantId}/invoices": {
+      "get": {
+        "operationId": "ListPlatformInvoices",
+        "x-permission": "platform.read",
+        "summary": "List administrative platform invoices for a tenant.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Administrative invoices.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "IssuePlatformInvoice",
+        "x-permission": "platform.billing.manage",
+        "x-csrf": true,
+        "summary": "Issue a documented administrative invoice; no payment gateway is involved.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueInvoiceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Invoice issued (or replayed for the same idempotency key).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceIssuedView"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/invoices/{invoiceId}/revocation": {
+      "post": {
+        "operationId": "VoidPlatformInvoice",
+        "x-permission": "platform.billing.manage",
+        "x-csrf": true,
+        "summary": "Void an issued administrative invoice with a reason.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InvoiceId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidInvoiceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invoice voided.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceView"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/invoices/{invoiceId}/settlement": {
+      "post": {
+        "operationId": "SettlePlatformInvoice",
+        "x-permission": "platform.billing.manage",
+        "x-csrf": true,
+        "summary": "Record a manual settlement reference; this is a record, not a processing gateway.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InvoiceId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettleInvoiceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Manual settlement recorded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceView"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/subscription": {
+      "get": {
+        "operationId": "GetTenantSubscription",
+        "x-permission": "subscription.read",
+        "summary": "Tenant read of its own subscription, entitlements and usage; never grants subscription management.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscription view for the active tenant.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionView"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/tenants": {
+      "get": {
+        "operationId": "ListPlatformTenants",
+        "x-permission": "platform.read",
+        "summary": "Minimum platform directory: platform-owned labels, subscription state, plan and usage counters only.",
+        "responses": {
+          "200": {
+            "description": "Platform directory.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformTenantDirectoryList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "OnboardPlatformTenant",
+        "x-permission": "subscription.manage",
+        "x-csrf": true,
+        "summary": "Onboard a new tenant with a plan, materialized entitlements and limits.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardTenantInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tenant onboarded (or replayed for the same idempotency key).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifecycleResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/tenants/{tenantId}/suspension": {
+      "post": {
+        "operationId": "SuspendPlatformTenant",
+        "x-permission": "subscription.manage",
+        "x-csrf": true,
+        "summary": "Suspend a tenant: stop sales increases with recorded Stop Sell, keep receiving channel commitments.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifecycleReasonInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tenant suspended with an aggregate safety snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifecycleResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/tenants/{tenantId}/reactivation": {
+      "post": {
+        "operationId": "ReactivatePlatformTenant",
+        "x-permission": "subscription.manage",
+        "x-csrf": true,
+        "summary": "Reactivate a suspended tenant after verifying the pinned policy version; expired entitlements are never revived silently.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReactivationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tenant reactivated (or 409 POLICY_VERSION_STALE until acknowledged).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifecycleResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/tenants/{tenantId}/closure": {
+      "post": {
+        "operationId": "ClosePlatformTenant",
+        "x-permission": "subscription.manage",
+        "x-csrf": true,
+        "summary": "Close a tenant subscription; no financial or audit data is deleted.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifecycleReasonInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tenant closed with a recorded no-deletion snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifecycleResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/tenants/{tenantId}/lifecycle": {
+      "get": {
+        "operationId": "ListPlatformTenantLifecycle",
+        "x-permission": "platform.read",
+        "summary": "Append-only lifecycle ledger for a tenant.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lifecycle events, newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifecycleEventList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/audit": {
+      "get": {
+        "operationId": "ListPlatformAudit",
+        "x-permission": "platform.read",
+        "summary": "Platform audit trail (safe fields only).",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Platform audit trail (safe fields only).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAuditList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/support-grants": {
+      "get": {
+        "operationId": "ListPlatformSupportGrants",
+        "x-permission": "platform.read",
+        "summary": "List temporary support grants.",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List temporary support grants.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportGrantList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreatePlatformSupportGrant",
+        "x-permission": "platform.support.manage",
+        "summary": "Grant a justified, scoped, time-boxed tenant support access (self-grant denied).",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSupportGrantInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Grant a justified, scoped, time-boxed tenant support access (self-grant denied).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportGrantView"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/support-grants/{grantId}/revocation": {
+      "post": {
+        "operationId": "RevokePlatformSupportGrant",
+        "x-permission": "platform.support.manage",
+        "summary": "Revoke a support grant with a reason.",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/GrantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeGrantInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Revoke a support grant with a reason.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportGrantRevocationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/support/tenant-profile": {
+      "post": {
+        "operationId": "ReadPlatformSupportTenantProfile",
+        "x-permission": "platform.support.read",
+        "summary": "Read minimal tenant profile; requires a live grant with tenant.read scope.",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportTenantInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Read minimal tenant profile; requires a live grant with tenant.read scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportTenantProfileResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/platform/support/tenant-audit": {
+      "post": {
+        "operationId": "ReadPlatformSupportTenantAudit",
+        "x-permission": "platform.support.read",
+        "summary": "Read the tenant audit trail; requires a live grant with audit.read scope.",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportTenantInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Read the tenant audit trail; requires a live grant with audit.read scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportTenantAuditResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "hotel_session"
+      }
+    },
+    "parameters": {
+      "TenantId": {
+        "name": "tenantId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PlanCode": {
+        "name": "planCode",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+        }
+      },
+      "InvoiceId": {
+        "name": "invoiceId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Csrf": {
+        "name": "x-csrf-token",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 32
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 200
+        }
+      },
+      "IfMatch": {
+        "name": "If-Match",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^\"?[0-9]+\"?$"
+        },
+        "description": "Expected subscription version for lifecycle transitions."
+      },
+      "GrantId": {
+        "name": "grantId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Contract error envelope.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "correlation_id"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Limits": {
+        "type": "object",
+        "description": "Declared non-negative integer limits keyed by metric code.",
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "Entitlements": {
+        "type": "object",
+        "description": "Capability toggles keyed by capability code.",
+        "additionalProperties": {
+          "type": "boolean"
+        }
+      },
+      "PlanView": {
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "status",
+          "policy_versions",
+          "created_at"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "RETIRED"
+            ]
+          },
+          "policy_versions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PlanList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanView"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreatePlanInput": {
+        "type": "object",
+        "required": [
+          "code",
+          "name"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200
+          }
+        },
+        "additionalProperties": false
+      },
+      "PolicyVersionView": {
+        "type": "object",
+        "required": [
+          "plan_code",
+          "version",
+          "effective_from",
+          "limits",
+          "entitlements",
+          "created_at"
+        ],
+        "properties": {
+          "plan_code": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          },
+          "entitlements": {
+            "$ref": "#/components/schemas/Entitlements"
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PolicyVersionList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PolicyVersionView"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreatePolicyVersionInput": {
+        "type": "object",
+        "required": [
+          "effective_from"
+        ],
+        "properties": {
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          },
+          "entitlements": {
+            "$ref": "#/components/schemas/Entitlements"
+          },
+          "notes": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "EntitlementView": {
+        "type": "object",
+        "required": [
+          "capability_code",
+          "state",
+          "active",
+          "limits",
+          "source",
+          "version"
+        ],
+        "properties": {
+          "capability_code": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "PLAN",
+              "OVERRIDE"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EntitlementSetResult": {
+        "type": "object",
+        "required": [
+          "entitlement"
+        ],
+        "properties": {
+          "entitlement": {
+            "$ref": "#/components/schemas/EntitlementView"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SetEntitlementInput": {
+        "type": "object",
+        "required": [
+          "capability_code",
+          "state"
+        ],
+        "properties": {
+          "capability_code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ]
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "EntitlementEventView": {
+        "type": "object",
+        "required": [
+          "capability_code",
+          "state",
+          "limits",
+          "source",
+          "effective_from",
+          "created_at"
+        ],
+        "properties": {
+          "capability_code": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ]
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "PLAN",
+              "OVERRIDE"
+            ]
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UsageCounterView": {
+        "type": "object",
+        "required": [
+          "metric",
+          "period_key",
+          "used",
+          "limit_value"
+        ],
+        "properties": {
+          "metric": {
+            "type": "string"
+          },
+          "period_key": {
+            "type": "string"
+          },
+          "used": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit_value": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "UsageList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsageCounterView"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "RecordUsageInput": {
+        "type": "object",
+        "required": [
+          "metric",
+          "quantity"
+        ],
+        "properties": {
+          "metric": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          }
+        },
+        "additionalProperties": false
+      },
+      "RecordUsageResult": {
+        "type": "object",
+        "required": [
+          "metric",
+          "quantity",
+          "used",
+          "limit_value",
+          "replayed"
+        ],
+        "properties": {
+          "metric": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "used": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit_value": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SubscriptionView": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "customer_label",
+          "plan_code",
+          "policy_version",
+          "state",
+          "version",
+          "entitlements",
+          "usage"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "customer_label": {
+            "type": "string"
+          },
+          "plan_code": {
+            "type": "string"
+          },
+          "policy_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACTIVE",
+              "SUSPENDED",
+              "CLOSED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "suspended_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "suspension_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reactivated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "closed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "close_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "entitlements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntitlementView"
+            }
+          },
+          "usage": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsageCounterView"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "PlatformSubscriptionResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SubscriptionView"
+          },
+          {
+            "type": "object",
+            "required": [
+              "lifecycle"
+            ],
+            "properties": {
+              "lifecycle": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EntitlementEventView"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "InvoiceLineView": {
+        "type": "object",
+        "required": [
+          "description",
+          "quantity",
+          "unit_amount",
+          "amount"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "unit_amount": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "InvoiceView": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "number",
+          "period_start",
+          "period_end",
+          "currency",
+          "total_amount",
+          "state",
+          "issued_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "total_amount": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ISSUED",
+              "VOID",
+              "SETTLED"
+            ]
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "voided_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "void_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "settled_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "settlement_reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "InvoiceIssuedView": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/InvoiceView"
+          },
+          {
+            "type": "object",
+            "required": [
+              "lines",
+              "replayed"
+            ],
+            "properties": {
+              "lines": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/InvoiceLineView"
+                }
+              },
+              "replayed": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      },
+      "InvoiceList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceView"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "IssueInvoiceInput": {
+        "type": "object",
+        "required": [
+          "period_start",
+          "period_end",
+          "currency",
+          "lines"
+        ],
+        "properties": {
+          "period_start": {
+            "type": "string",
+            "format": "date"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 50,
+            "items": {
+              "type": "object",
+              "required": [
+                "description",
+                "quantity",
+                "unit_amount"
+              ],
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 300
+                },
+                "quantity": {
+                  "type": "string",
+                  "pattern": "^\\d{1,16}(\\.\\d{1,6})?$"
+                },
+                "unit_amount": {
+                  "type": "string",
+                  "pattern": "^\\d{1,16}(\\.\\d{1,6})?$"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "notes": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "VoidInvoiceInput": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "SettleInvoiceInput": {
+        "type": "object",
+        "required": [
+          "reference"
+        ],
+        "properties": {
+          "reference": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200
+          }
+        },
+        "additionalProperties": false
+      },
+      "OnboardTenantInput": {
+        "type": "object",
+        "required": [
+          "name",
+          "slug",
+          "customer_label",
+          "plan_code"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,62}$"
+          },
+          "customer_label": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200
+          },
+          "plan_code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+          },
+          "owner_email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "LifecycleReasonInput": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReactivationInput": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "acknowledge_policy_version": {
+            "type": "boolean"
+          },
+          "resume_sales": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LifecycleSafety": {
+        "type": "object",
+        "required": [
+          "snapshot",
+          "writer",
+          "channel_state"
+        ],
+        "properties": {
+          "snapshot": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "writer": {
+            "type": "string"
+          },
+          "channel_state": {
+            "type": "string"
+          },
+          "sales_stops_applied": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sales_restrictions_reopened": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "state_before": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "deletions": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": true
+      },
+      "LifecycleEventView": {
+        "type": "object",
+        "required": [
+          "event_type",
+          "state_after",
+          "created_at"
+        ],
+        "properties": {
+          "event_type": {
+            "type": "string",
+            "enum": [
+              "ONBOARDED",
+              "SUSPENDED",
+              "REACTIVATED",
+              "CLOSED"
+            ]
+          },
+          "state_before": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state_after": {
+            "type": "string"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LifecycleEventList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LifecycleEventView"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "LifecycleResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SubscriptionView"
+          },
+          {
+            "type": "object",
+            "required": [
+              "safety",
+              "replayed"
+            ],
+            "properties": {
+              "safety": {
+                "$ref": "#/components/schemas/LifecycleSafety"
+              },
+              "event": {
+                "$ref": "#/components/schemas/LifecycleEventView"
+              },
+              "owner_user_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "expired_entitlements": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "repinned_policy_version": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "replayed": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      },
+      "PlatformTenantDirectoryView": {
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "tenant_slug",
+          "customer_label",
+          "plan_code",
+          "policy_version",
+          "state",
+          "version",
+          "entitlements",
+          "usage",
+          "lifecycle_events"
+        ],
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenant_slug": {
+            "type": "string"
+          },
+          "customer_label": {
+            "type": "string"
+          },
+          "plan_code": {
+            "type": "string"
+          },
+          "policy_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACTIVE",
+              "SUSPENDED",
+              "CLOSED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "entitlements": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "usage": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsageCounterView"
+            }
+          },
+          "lifecycle_events": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "PlatformTenantDirectoryList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformTenantDirectoryView"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "PlatformAuditView": {
+        "type": "object",
+        "required": [
+          "id",
+          "action",
+          "resource_type",
+          "outcome",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenant_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "actor_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "actor_role": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "action": {
+            "type": "string"
+          },
+          "resource_type": {
+            "type": "string"
+          },
+          "resource_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "DENIED",
+              "FAILED"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "correlation_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PlatformAuditList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformAuditView"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SupportGrantView": {
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "platform_user_id",
+          "scopes",
+          "reason",
+          "granted_by_user_id",
+          "starts_at",
+          "expires_at",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "platform_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "platform_user_email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "tenant.read",
+                "audit.read"
+              ]
+            }
+          },
+          "reason": {
+            "type": "string"
+          },
+          "granted_by_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "EXPIRED",
+              "REVOKED"
+            ]
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "revoke_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SupportGrantList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SupportGrantView"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SupportGrantRevocationResult": {
+        "type": "object",
+        "required": [
+          "grant"
+        ],
+        "properties": {
+          "grant": {
+            "$ref": "#/components/schemas/SupportGrantView"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateSupportGrantInput": {
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "platform_user_email",
+          "scopes",
+          "reason",
+          "expires_at"
+        ],
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "platform_user_email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320
+          },
+          "scopes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "items": {
+              "type": "string",
+              "enum": [
+                "tenant.read",
+                "audit.read"
+              ]
+            }
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RevokeGrantInput": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "SupportTenantInput": {
+        "type": "object",
+        "required": [
+          "tenant_id"
+        ],
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "SupportTenantProfileResult": {
+        "type": "object",
+        "required": [
+          "scope",
+          "grant_id",
+          "tenant"
+        ],
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "tenant.read",
+              "audit.read"
+            ]
+          },
+          "grant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenant": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "slug",
+              "status"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SupportTenantAuditResult": {
+        "type": "object",
+        "required": [
+          "scope",
+          "grant_id",
+          "events"
+        ],
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "tenant.read",
+              "audit.read"
+            ]
+          },
+          "grant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

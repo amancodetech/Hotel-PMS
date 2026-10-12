@@ -1,0 +1,4453 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL PMS SaaS V1 design contract",
+    "version": "0.6.0",
+    "description": "Pre-implementation API contract. Not a running API or a provider contract. Cross-field validation, money, isolation, approvals and transaction invariants are normative in docs/26_api_permissions_events.md. Property operations use the session membership. Schemas may not accept tenant IDs from bodies."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "paths": {
+    "/tenants/{tenantId}/properties/{propertyId}/resources": {
+      "get": {
+        "operationId": "ListResources",
+        "summary": "ListResources",
+        "x-permission": "property.read",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateResource",
+        "summary": "CreateResource",
+        "x-permission": "property.resource.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/compositions": {
+      "post": {
+        "operationId": "CreateComposition",
+        "summary": "CreateComposition",
+        "x-permission": "composition.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompositionInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/compositions/{compositionId}/activate": {
+      "post": {
+        "operationId": "ActivateComposition",
+        "summary": "ActivateComposition",
+        "x-permission": "composition.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "compositionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/rates/batch": {
+      "post": {
+        "operationId": "SetRates",
+        "summary": "SetRates",
+        "x-permission": "rate.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RateBatch"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/availability/search": {
+      "post": {
+        "operationId": "SearchAvailability",
+        "summary": "SearchAvailability",
+        "x-permission": "reservation.read",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/holds": {
+      "post": {
+        "operationId": "CreateHold",
+        "summary": "CreateHold",
+        "x-permission": "reservation.create",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoldInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations": {
+      "post": {
+        "operationId": "ConfirmReservation",
+        "summary": "ConfirmReservation",
+        "x-permission": "reservation.create",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmInput"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "ListReservations",
+        "summary": "ListReservations",
+        "x-permission": "reservation.read",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}": {
+      "get": {
+        "operationId": "GetReservation",
+        "summary": "GetReservation",
+        "x-permission": "reservation.read",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reservationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reservation"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "ModifyReservation",
+        "summary": "ModifyReservation",
+        "x-permission": "reservation.modify",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reservationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModifyInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservation-items/{itemId}/cancel": {
+      "post": {
+        "operationId": "CancelItem",
+        "summary": "CancelItem",
+        "x-permission": "reservation.cancel",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/external-change-requests": {
+      "post": {
+        "operationId": "RequestExternalChange",
+        "summary": "RequestExternalChange",
+        "x-permission": "reservation.external_change.request",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reservationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted for processing; not proof of provider completion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalChange"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservation-items/{itemId}/assignments": {
+      "post": {
+        "operationId": "AssignResources",
+        "summary": "AssignResources",
+        "x-permission": "assignment.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservation-items/{itemId}/move": {
+      "post": {
+        "operationId": "MoveStay",
+        "summary": "MoveStay",
+        "x-permission": "stay.move",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservation-items/{itemId}/check-in": {
+      "post": {
+        "operationId": "CheckIn",
+        "summary": "CheckIn",
+        "x-permission": "stay.checkin",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservation-items/{itemId}/check-out": {
+      "post": {
+        "operationId": "CheckOut",
+        "summary": "CheckOut",
+        "x-permission": "stay.checkout",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/blocks": {
+      "post": {
+        "operationId": "CreateBlock",
+        "summary": "CreateBlock",
+        "x-permission": "inventory.block",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlockInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/blocks/{blockId}/release": {
+      "post": {
+        "operationId": "ReleaseBlock",
+        "summary": "ReleaseBlock",
+        "x-permission": "inventory.block",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "blockId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections": {
+      "post": {
+        "operationId": "CreateConnection",
+        "summary": "CreateConnection",
+        "x-permission": "channel.connection.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections/{connectionId}/activate": {
+      "post": {
+        "operationId": "ActivateConnection",
+        "summary": "ActivateConnection",
+        "x-permission": "channel.connection.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "connectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted for processing; not proof of provider completion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivateConnectionInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections/{connectionId}/mapping": {
+      "put": {
+        "operationId": "SaveMapping",
+        "summary": "SaveMapping",
+        "x-permission": "channel.mapping.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "connectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappingInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/exposures/preview": {
+      "post": {
+        "operationId": "PreviewExposure",
+        "summary": "PreviewExposure",
+        "x-permission": "channel.sale.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExposurePreview"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExposurePreviewInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/exposures": {
+      "post": {
+        "operationId": "PublishExposure",
+        "summary": "PublishExposure",
+        "x-permission": "channel.sale.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted for processing; not proof of provider completion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExposurePublishInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/exposures/{exposureId}/withdraw": {
+      "post": {
+        "operationId": "WithdrawExposure",
+        "summary": "WithdrawExposure",
+        "x-permission": "channel.sale.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "exposureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted for processing; not proof of provider completion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections/{connectionId}/sale-status": {
+      "post": {
+        "operationId": "SetDistributionSaleStatus",
+        "summary": "SetDistributionSaleStatus",
+        "x-permission": "channel.sale.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "connectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaleResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaleInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections/{connectionId}/sync": {
+      "get": {
+        "operationId": "GetSyncStatus",
+        "summary": "GetSyncStatus",
+        "x-permission": "channel.read",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "connectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections/{connectionId}/reconcile": {
+      "post": {
+        "operationId": "ReconcileConnection",
+        "summary": "ReconcileConnection",
+        "x-permission": "channel.reconcile",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "connectionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted for processing; not proof of provider completion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/inbox/{revisionId}/reprocess": {
+      "post": {
+        "operationId": "ReprocessChannelEvent",
+        "summary": "ReprocessChannelEvent",
+        "x-permission": "channel.reprocess",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "revisionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/tasks": {
+      "post": {
+        "operationId": "CreateTask",
+        "summary": "CreateTask",
+        "x-permission": "task.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/tasks/{taskId}/complete": {
+      "post": {
+        "operationId": "CompleteTask",
+        "summary": "CompleteTask",
+        "x-permission": "task.complete",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/charges": {
+      "post": {
+        "operationId": "PostCharge",
+        "summary": "PostCharge",
+        "x-permission": "folio.charge",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChargeInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/payments": {
+      "post": {
+        "operationId": "RecordPayment",
+        "summary": "RecordPayment",
+        "x-permission": "payment.record",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/refunds": {
+      "post": {
+        "operationId": "RequestRefund",
+        "summary": "RequestRefund",
+        "x-permission": "payment.refund.request",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted for processing; not proof of provider completion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/approvals": {
+      "post": {
+        "operationId": "ApproveAction",
+        "summary": "ApproveAction",
+        "x-permission": "approval.approve",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/night-audits": {
+      "post": {
+        "operationId": "RunNightAudit",
+        "summary": "RunNightAudit",
+        "x-permission": "business_day.close",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted for processing; not proof of provider completion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NightAuditInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reports/query": {
+      "post": {
+        "operationId": "ReadReport",
+        "summary": "ReadReport",
+        "x-permission": "report.operational.view",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reports/exports": {
+      "post": {
+        "operationId": "ExportReport",
+        "summary": "ExportReport",
+        "x-permission": "report.export",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "propertyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted for processing; not proof of provider completion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/roles": {
+      "post": {
+        "operationId": "CreateRole",
+        "summary": "CreateRole",
+        "x-permission": "role.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/role-grants": {
+      "post": {
+        "operationId": "GrantRole",
+        "summary": "GrantRole",
+        "x-permission": "role.grant",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrantInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/memberships/{membershipId}/revoke": {
+      "post": {
+        "operationId": "RevokeMembership",
+        "summary": "RevokeMembership",
+        "x-permission": "membership.revoke",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "membershipId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/memberships/{membershipId}/effective-permissions": {
+      "get": {
+        "operationId": "GetEffectivePermissions",
+        "summary": "GetEffectivePermissions",
+        "x-permission": "membership.read",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "membershipId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EffectivePermissions"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/entitlements": {
+      "put": {
+        "operationId": "SetEntitlement",
+        "summary": "SetEntitlement",
+        "x-permission": "subscription.manage",
+        "description": "Design contract only. Domain invariants and additional permissions are specified in docs/26_api_permissions_events.md. All tenant/property references require server-side authorization.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped result. External synchronization is reported independently.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntitlementInput"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "hotel_session"
+      }
+    },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128
+        }
+      },
+      "IfMatch": {
+        "name": "If-Match",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^\"[1-9][0-9]*\"$"
+        },
+        "description": "Version of the command target, or inventory/config aggregate for batch commands."
+      },
+      "Csrf": {
+        "name": "X-CSRF-Token",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "Cursor": {
+        "name": "cursor",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "correlation_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "correlation_id"
+        ]
+      },
+      "Money": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "type": "string",
+            "pattern": "^-?[0-9]{1,18}(\\.[0-9]{1,6})?$"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          }
+        },
+        "required": [
+          "amount",
+          "currency"
+        ]
+      },
+      "PositiveMoney": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "type": "string",
+            "pattern": "^(?!0+(?:\\.0+)?$)[0-9]{1,18}(\\.[0-9]{1,6})?$"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          }
+        },
+        "required": [
+          "amount",
+          "currency"
+        ]
+      },
+      "Period": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "arrival": {
+            "type": "string",
+            "format": "date"
+          },
+          "departure": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "arrival",
+          "departure"
+        ]
+      },
+      "Occupancy": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "adults": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "child_ages": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 17
+            },
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "adults",
+          "child_ages"
+        ]
+      },
+      "ItemInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "occupancy": {
+            "$ref": "#/components/schemas/Occupancy"
+          },
+          "price_snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "split_stay_consent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "product_id",
+          "period",
+          "occupancy",
+          "price_snapshot_id",
+          "quantity",
+          "split_stay_consent"
+        ]
+      },
+      "OperationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "correlation_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "operation_id",
+          "resource_id",
+          "version",
+          "state",
+          "correlation_id"
+        ]
+      },
+      "Resource": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "ROOM",
+              "BED",
+              "VILLA",
+              "APARTMENT",
+              "HOUSE",
+              "SITE",
+              "TENT",
+              "CABIN"
+            ]
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "RETIRED"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "code",
+          "type",
+          "capacity",
+          "state"
+        ]
+      },
+      "ResourceInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "ROOM",
+              "BED",
+              "VILLA",
+              "APARTMENT",
+              "HOUSE",
+              "SITE",
+              "TENT",
+              "CABIN"
+            ]
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "location_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "code",
+          "type",
+          "capacity"
+        ]
+      },
+      "CompositionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "effective_period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "resource_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 32,
+            "minItems": 0,
+            "uniqueItems": true
+          },
+          "nested_version_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 32,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "product_id",
+          "effective_period",
+          "resource_ids",
+          "nested_version_ids"
+        ],
+        "anyOf": [
+          {
+            "properties": {
+              "resource_ids": {
+                "minItems": 1
+              }
+            }
+          },
+          {
+            "properties": {
+              "nested_version_ids": {
+                "minItems": 1
+              }
+            }
+          }
+        ]
+      },
+      "Reason": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "RateBatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "cells": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "rate_plan_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "occupancy": {
+                  "$ref": "#/components/schemas/Occupancy"
+                },
+                "money": {
+                  "$ref": "#/components/schemas/NonNegativeMoney"
+                },
+                "tax_policy_version": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "required": [
+                "rate_plan_id",
+                "date",
+                "occupancy",
+                "money",
+                "tax_policy_version"
+              ]
+            },
+            "maxItems": 1000,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "cells"
+        ]
+      },
+      "SearchInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "product_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 100,
+            "minItems": 1
+          },
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "occupancy": {
+            "$ref": "#/components/schemas/Occupancy"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "product_ids",
+          "period",
+          "occupancy",
+          "quantity"
+        ]
+      },
+      "SearchResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "inventory_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "offers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "product_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "result": {
+                  "type": "string",
+                  "enum": [
+                    "AVAILABLE",
+                    "UNAVAILABLE",
+                    "SPLIT_REQUIRED",
+                    "UNDETERMINED"
+                  ]
+                },
+                "reason_codes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "maxItems": 20
+                }
+              },
+              "required": [
+                "product_id",
+                "result",
+                "reason_codes"
+              ]
+            },
+            "maxItems": 100
+          },
+          "guaranteed": {
+            "const": false
+          }
+        },
+        "required": [
+          "inventory_version",
+          "offers",
+          "guaranteed"
+        ]
+      },
+      "HoldInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemInput"
+            },
+            "maxItems": 20,
+            "minItems": 1
+          },
+          "inventory_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "ttl_seconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 900
+          }
+        },
+        "required": [
+          "items",
+          "inventory_version",
+          "ttl_seconds"
+        ]
+      },
+      "ConfirmInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "hold_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "policy_snapshot_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "hold_id",
+              "policy_snapshot_id"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ItemInput"
+                },
+                "maxItems": 20,
+                "minItems": 1
+              },
+              "inventory_version": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "policy_snapshot_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "items",
+              "inventory_version",
+              "policy_snapshot_id"
+            ]
+          }
+        ]
+      },
+      "Reservation": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "DIRECT",
+              "OTA",
+              "IMPORT"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReservationItemView"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "state",
+          "source",
+          "items"
+        ]
+      },
+      "ModifyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemInput"
+            },
+            "maxItems": 20,
+            "minItems": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "approval_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "items",
+          "reason"
+        ]
+      },
+      "ExternalChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "CANCEL",
+              "MODIFY_DATES"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "requested_period": {
+            "$ref": "#/components/schemas/Period"
+          }
+        },
+        "required": [
+          "kind",
+          "reason"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "MODIFY_DATES"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "requested_period"
+              ]
+            }
+          }
+        ]
+      },
+      "AssignmentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "segment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "segment_id",
+          "resource_ids",
+          "reason"
+        ]
+      },
+      "CheckoutInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "receivable_authorization_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "BlockInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "resource_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "PLANNED",
+              "EMERGENCY"
+            ]
+          }
+        },
+        "required": [
+          "resource_ids",
+          "period",
+          "reason",
+          "mode"
+        ]
+      },
+      "ConnectionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "provider": {
+            "const": "CHANNEX"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "BOOKING_COM",
+              "TIKET",
+              "AGODA",
+              "TRAVELOKA",
+              "TRIP_COM"
+            ]
+          },
+          "external_property_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "credential_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "STAGING",
+              "PRODUCTION"
+            ]
+          }
+        },
+        "required": [
+          "provider",
+          "channel",
+          "external_property_id",
+          "credential_ref",
+          "environment"
+        ]
+      },
+      "MappingInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "external_room_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "external_rate_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "product_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "rate_plan_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "occupancy": {
+                  "$ref": "#/components/schemas/Occupancy"
+                }
+              },
+              "required": [
+                "external_room_id",
+                "external_rate_id",
+                "product_id",
+                "rate_plan_id",
+                "occupancy"
+              ]
+            },
+            "maxItems": 1000,
+            "minItems": 1
+          },
+          "evidence_ref": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "entries",
+          "evidence_ref"
+        ]
+      },
+      "ActivateConnectionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "capability_evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 100,
+            "minItems": 1
+          },
+          "mapping_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "approval_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "capability_evidence_ids",
+          "mapping_version"
+        ]
+      },
+      "ExposurePreviewInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "connection_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "resource_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "inventory_version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "connection_id",
+          "product_id",
+          "period",
+          "resource_ids",
+          "inventory_version"
+        ]
+      },
+      "ExposurePreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "preview_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inventory_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "allowed": {
+            "type": "boolean"
+          },
+          "reason_codes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "maxItems": 20
+          },
+          "preview_version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "preview_id",
+          "inventory_version",
+          "expires_at",
+          "allowed",
+          "reason_codes",
+          "preview_version"
+        ]
+      },
+      "ExposurePublishInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "preview_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "preview_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "approval_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "preview_id",
+          "preview_version"
+        ]
+      },
+      "SaleInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "const": "STOP_SELL"
+              },
+              "product_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "period": {
+                "$ref": "#/components/schemas/Period"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "approval_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "action",
+              "product_id",
+              "period",
+              "reason"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "const": "OPEN"
+              },
+              "restriction_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "approval_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "action",
+              "restriction_id",
+              "reason"
+            ]
+          }
+        ]
+      },
+      "SaleResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "effective_open": {
+            "type": "boolean"
+          },
+          "reason_codes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "maxItems": 20
+          },
+          "sync_state": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "PROVIDER_ACCEPTED",
+              "CHANNEL_VERIFIED",
+              "PARTIAL",
+              "UNKNOWN",
+              "FAILED"
+            ]
+          }
+        },
+        "required": [
+          "operation_id",
+          "resource_id",
+          "version",
+          "effective_open",
+          "reason_codes",
+          "sync_state"
+        ]
+      },
+      "SyncStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "connection_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "desired_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "provider_accepted_version": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "channel_verified_version": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "PROVIDER_ACCEPTED",
+              "CHANNEL_VERIFIED",
+              "PARTIAL",
+              "UNKNOWN",
+              "FAILED"
+            ]
+          },
+          "observed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "connection_id",
+          "desired_version",
+          "provider_accepted_version",
+          "channel_verified_version",
+          "state",
+          "observed_at"
+        ]
+      },
+      "TaskInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "HOUSEKEEPING",
+              "MAINTENANCE",
+              "GUEST_REQUEST"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "assignee_membership_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "type",
+          "description"
+        ]
+      },
+      "ChargeInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "money": {
+            "$ref": "#/components/schemas/PositiveMoney"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "policy_snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "folio_id",
+          "money",
+          "business_date",
+          "source_ref",
+          "policy_snapshot_id"
+        ]
+      },
+      "PaymentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "money": {
+            "$ref": "#/components/schemas/PositiveMoney"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "CASH",
+              "BANK_TRANSFER",
+              "OTA_SETTLEMENT",
+              "EXTERNAL_POS"
+            ]
+          },
+          "external_reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "evidence_ref": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "folio_id",
+          "money",
+          "business_date",
+          "method",
+          "external_reference"
+        ]
+      },
+      "RefundInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "payment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "money": {
+            "$ref": "#/components/schemas/PositiveMoney"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "approval_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "payment_id",
+          "money",
+          "reason"
+        ]
+      },
+      "ApprovalInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "action_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "request_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "resource_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "action_id",
+          "request_hash",
+          "resource_version",
+          "decision",
+          "reason"
+        ]
+      },
+      "NightAuditInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": [
+          "business_date"
+        ]
+      },
+      "ReportInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ARRIVALS",
+              "DEPARTURES",
+              "OCCUPANCY",
+              "REVENUE",
+              "SETTLEMENTS",
+              "CHANNEL_STATUS"
+            ]
+          },
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "period"
+        ]
+      },
+      "ReportResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "IDR",
+              "USD",
+              null
+            ]
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "unit": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                }
+              },
+              "required": [
+                "label",
+                "value",
+                "unit"
+              ]
+            },
+            "maxItems": 100
+          }
+        },
+        "required": [
+          "report_id",
+          "generated_at",
+          "currency",
+          "rows"
+        ]
+      },
+      "RoleInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "permission_codes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "maxItems": 200,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "name",
+          "permission_codes"
+        ]
+      },
+      "GrantInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "membership_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "property_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 100,
+            "minItems": 0,
+            "uniqueItems": true
+          },
+          "effect": {
+            "type": "string",
+            "enum": [
+              "ALLOW",
+              "DENY"
+            ]
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approval_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scope_type": {
+            "type": "string",
+            "enum": [
+              "TENANT",
+              "PROPERTIES"
+            ]
+          }
+        },
+        "required": [
+          "membership_id",
+          "role_id",
+          "property_ids",
+          "effect",
+          "scope_type"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "scope_type": {
+                  "const": "TENANT"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "property_ids": {
+                  "maxItems": 0
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "property_ids": {
+                  "minItems": 1
+                }
+              }
+            }
+          }
+        ]
+      },
+      "EffectivePermissions": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "membership_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "authz_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "grants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "role_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "property_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "permission_code": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "effect": {
+                  "type": "string",
+                  "enum": [
+                    "ALLOW",
+                    "DENY"
+                  ]
+                }
+              },
+              "required": [
+                "role_id",
+                "property_id",
+                "permission_code",
+                "effect"
+              ]
+            },
+            "maxItems": 100
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "membership_id",
+          "authz_version",
+          "grants",
+          "next_cursor"
+        ]
+      },
+      "EntitlementInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "capability_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "capability_code",
+          "enabled",
+          "reason"
+        ]
+      },
+      "ResourceList": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Resource"
+            },
+            "maxItems": 100
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
+      "ReservationList": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reservation"
+            },
+            "maxItems": 100
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ]
+      },
+      "ReservationItemView": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "source_item_id": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "state",
+          "period",
+          "quantity"
+        ]
+      },
+      "NonNegativeMoney": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "type": "string",
+            "pattern": "^[0-9]{1,18}(\\.[0-9]{1,6})?$"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          }
+        },
+        "required": [
+          "amount",
+          "currency"
+        ]
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "400 malformed; 401 unauthenticated; 403 action forbidden; 404 unknown or out-of-scope; 409 domain/idempotency conflict; 412 stale version; 422 validation/capability; 429 rate limit; 503 unavailable. Response must not expose another tenant.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@hotel/worker",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "dev": "node --watch dist/main.js",
+    "watch": "tsc --watch -p tsconfig.json"
+  },
+  "dependencies": {
+    "@hotel/backend": "workspace:*",
+    "@hotel/contracts": "workspace:*"
+  },
+  "devDependencies": {}
+}

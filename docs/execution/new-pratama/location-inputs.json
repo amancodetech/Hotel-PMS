@@ -1,0 +1,846 @@
+{
+  "status": "CONFIRMED_BUILDING_GROUPS_PARTIAL_ROOM_ASSIGNMENTS",
+  "source": "User statements, 8 October 2026; room inventory remains the original Excel inventory",
+  "independent_villas": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24
+  ],
+  "shared_building": {
+    "villas": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "ground_floor_villas": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "second_floor_villas": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "official_building_name": null
+  },
+  "independent_floor_distribution": {
+    "1": {
+      "ground_rooms": 1,
+      "upper_rooms": 3,
+      "ground_room_numbers": null
+    },
+    "2": {
+      "all_rooms": "GROUND"
+    },
+    "3": {
+      "ground_rooms": 1,
+      "upper_rooms": 2,
+      "ground_room_numbers": null
+    },
+    "4": {
+      "user_statement_rooms": 3,
+      "excel_inventory_rooms": 2,
+      "resolution": "PENDING_USER",
+      "confirmed_floors": [
+        "GROUND",
+        "UPPER"
+      ]
+    },
+    "5": {
+      "ground_rooms": 1,
+      "upper_rooms": 2,
+      "ground_room_numbers": null
+    },
+    "18_to_24": {
+      "all_rooms": "GROUND"
+    }
+  },
+  "standalone_rooms": {
+    "codes": "Kamar Lepas 1..6",
+    "building": null,
+    "floor": null
+  },
+  "pending": [
+    "Villa 4: reconcile two Excel rooms with the stated one ground plus two upper rooms",
+    "Actual ground-room numbers for Villa 1, Villa 3 and Villa 5",
+    "Location and floor of Kamar Lepas 1..6"
+  ],
+  "constraints": [
+    "Do not infer room numbers from room quantities",
+    "Do not recreate resources, products or compositions",
+    "Do not replace resource.parent_resource_id with the spatial tree",
+    "Keep prices postponed, property SETUP and channel sale closed"
+  ],
+  "execution_plan": {
+    "schema_version": 1,
+    "status": "SOURCE_PREPARED_NOT_EXECUTED",
+    "nodes": [
+      {
+        "code": "LOC-SHARED",
+        "name": "Shared building — Villa 6..17",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 6
+      },
+      {
+        "code": "LOC-SHARED-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-SHARED",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-SHARED-2",
+        "name": "Second floor",
+        "parent_code": "LOC-SHARED",
+        "kind": "FLOOR",
+        "display_order": 2
+      },
+      {
+        "code": "LOC-V01",
+        "name": "Villa 1",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 1
+      },
+      {
+        "code": "LOC-V01-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V01",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-V01-U",
+        "name": "Upper floor",
+        "parent_code": "LOC-V01",
+        "kind": "FLOOR",
+        "display_order": 1
+      },
+      {
+        "code": "LOC-V02",
+        "name": "Villa 2",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 2
+      },
+      {
+        "code": "LOC-V02-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V02",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-V03",
+        "name": "Villa 3",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 3
+      },
+      {
+        "code": "LOC-V03-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V03",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-V03-U",
+        "name": "Upper floor",
+        "parent_code": "LOC-V03",
+        "kind": "FLOOR",
+        "display_order": 1
+      },
+      {
+        "code": "LOC-V04",
+        "name": "Villa 4",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 4
+      },
+      {
+        "code": "LOC-V04-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V04",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-V04-U",
+        "name": "Upper floor",
+        "parent_code": "LOC-V04",
+        "kind": "FLOOR",
+        "display_order": 1
+      },
+      {
+        "code": "LOC-V05",
+        "name": "Villa 5",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 5
+      },
+      {
+        "code": "LOC-V05-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V05",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-V05-U",
+        "name": "Upper floor",
+        "parent_code": "LOC-V05",
+        "kind": "FLOOR",
+        "display_order": 1
+      },
+      {
+        "code": "LOC-V06",
+        "name": "Villa 6",
+        "parent_code": "LOC-SHARED-G",
+        "kind": null,
+        "display_order": 6
+      },
+      {
+        "code": "LOC-V07",
+        "name": "Villa 7",
+        "parent_code": "LOC-SHARED-G",
+        "kind": null,
+        "display_order": 7
+      },
+      {
+        "code": "LOC-V08",
+        "name": "Villa 8",
+        "parent_code": "LOC-SHARED-G",
+        "kind": null,
+        "display_order": 8
+      },
+      {
+        "code": "LOC-V09",
+        "name": "Villa 9",
+        "parent_code": "LOC-SHARED-G",
+        "kind": null,
+        "display_order": 9
+      },
+      {
+        "code": "LOC-V10",
+        "name": "Villa 10",
+        "parent_code": "LOC-SHARED-G",
+        "kind": null,
+        "display_order": 10
+      },
+      {
+        "code": "LOC-V11",
+        "name": "Villa 11",
+        "parent_code": "LOC-SHARED-G",
+        "kind": null,
+        "display_order": 11
+      },
+      {
+        "code": "LOC-V12",
+        "name": "Villa 12",
+        "parent_code": "LOC-SHARED-2",
+        "kind": null,
+        "display_order": 12
+      },
+      {
+        "code": "LOC-V13",
+        "name": "Villa 13",
+        "parent_code": "LOC-SHARED-2",
+        "kind": null,
+        "display_order": 13
+      },
+      {
+        "code": "LOC-V14",
+        "name": "Villa 14",
+        "parent_code": "LOC-SHARED-2",
+        "kind": null,
+        "display_order": 14
+      },
+      {
+        "code": "LOC-V15",
+        "name": "Villa 15",
+        "parent_code": "LOC-SHARED-2",
+        "kind": null,
+        "display_order": 15
+      },
+      {
+        "code": "LOC-V16",
+        "name": "Villa 16",
+        "parent_code": "LOC-SHARED-2",
+        "kind": null,
+        "display_order": 16
+      },
+      {
+        "code": "LOC-V17",
+        "name": "Villa 17",
+        "parent_code": "LOC-SHARED-2",
+        "kind": null,
+        "display_order": 17
+      },
+      {
+        "code": "LOC-V18",
+        "name": "Villa 18",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 18
+      },
+      {
+        "code": "LOC-V18-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V18",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-V19",
+        "name": "Villa 19",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 19
+      },
+      {
+        "code": "LOC-V19-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V19",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-V20",
+        "name": "Villa 20",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 20
+      },
+      {
+        "code": "LOC-V20-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V20",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-V21",
+        "name": "Villa 21",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 21
+      },
+      {
+        "code": "LOC-V21-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V21",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-V22",
+        "name": "Villa 22",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 22
+      },
+      {
+        "code": "LOC-V22-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V22",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-V23",
+        "name": "Villa 23",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 23
+      },
+      {
+        "code": "LOC-V23-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V23",
+        "kind": "FLOOR",
+        "display_order": 0
+      },
+      {
+        "code": "LOC-V24",
+        "name": "Villa 24",
+        "parent_code": null,
+        "kind": "BUILDING",
+        "display_order": 24
+      },
+      {
+        "code": "LOC-V24-G",
+        "name": "Ground floor",
+        "parent_code": "LOC-V24",
+        "kind": "FLOOR",
+        "display_order": 0
+      }
+    ],
+    "assignments": [
+      {
+        "resource_code": "V01",
+        "location_code": "LOC-V01"
+      },
+      {
+        "resource_code": "V02",
+        "location_code": "LOC-V02"
+      },
+      {
+        "resource_code": "V02-R01",
+        "location_code": "LOC-V02-G"
+      },
+      {
+        "resource_code": "V02-R02",
+        "location_code": "LOC-V02-G"
+      },
+      {
+        "resource_code": "V02-R03",
+        "location_code": "LOC-V02-G"
+      },
+      {
+        "resource_code": "V02-R04",
+        "location_code": "LOC-V02-G"
+      },
+      {
+        "resource_code": "V03",
+        "location_code": "LOC-V03"
+      },
+      {
+        "resource_code": "V04",
+        "location_code": "LOC-V04"
+      },
+      {
+        "resource_code": "V05",
+        "location_code": "LOC-V05"
+      },
+      {
+        "resource_code": "V06",
+        "location_code": "LOC-V06"
+      },
+      {
+        "resource_code": "V06-R01",
+        "location_code": "LOC-V06"
+      },
+      {
+        "resource_code": "V06-R02",
+        "location_code": "LOC-V06"
+      },
+      {
+        "resource_code": "V06-R03",
+        "location_code": "LOC-V06"
+      },
+      {
+        "resource_code": "V07",
+        "location_code": "LOC-V07"
+      },
+      {
+        "resource_code": "V07-R01",
+        "location_code": "LOC-V07"
+      },
+      {
+        "resource_code": "V07-R02",
+        "location_code": "LOC-V07"
+      },
+      {
+        "resource_code": "V07-R03",
+        "location_code": "LOC-V07"
+      },
+      {
+        "resource_code": "V08",
+        "location_code": "LOC-V08"
+      },
+      {
+        "resource_code": "V08-R01",
+        "location_code": "LOC-V08"
+      },
+      {
+        "resource_code": "V08-R02",
+        "location_code": "LOC-V08"
+      },
+      {
+        "resource_code": "V08-R03",
+        "location_code": "LOC-V08"
+      },
+      {
+        "resource_code": "V09",
+        "location_code": "LOC-V09"
+      },
+      {
+        "resource_code": "V09-R01",
+        "location_code": "LOC-V09"
+      },
+      {
+        "resource_code": "V09-R02",
+        "location_code": "LOC-V09"
+      },
+      {
+        "resource_code": "V09-R03",
+        "location_code": "LOC-V09"
+      },
+      {
+        "resource_code": "V10",
+        "location_code": "LOC-V10"
+      },
+      {
+        "resource_code": "V10-R01",
+        "location_code": "LOC-V10"
+      },
+      {
+        "resource_code": "V10-R02",
+        "location_code": "LOC-V10"
+      },
+      {
+        "resource_code": "V10-R03",
+        "location_code": "LOC-V10"
+      },
+      {
+        "resource_code": "V11",
+        "location_code": "LOC-V11"
+      },
+      {
+        "resource_code": "V11-R01",
+        "location_code": "LOC-V11"
+      },
+      {
+        "resource_code": "V11-R02",
+        "location_code": "LOC-V11"
+      },
+      {
+        "resource_code": "V11-R03",
+        "location_code": "LOC-V11"
+      },
+      {
+        "resource_code": "V12",
+        "location_code": "LOC-V12"
+      },
+      {
+        "resource_code": "V12-R01",
+        "location_code": "LOC-V12"
+      },
+      {
+        "resource_code": "V12-R02",
+        "location_code": "LOC-V12"
+      },
+      {
+        "resource_code": "V12-R03",
+        "location_code": "LOC-V12"
+      },
+      {
+        "resource_code": "V13",
+        "location_code": "LOC-V13"
+      },
+      {
+        "resource_code": "V13-R01",
+        "location_code": "LOC-V13"
+      },
+      {
+        "resource_code": "V13-R02",
+        "location_code": "LOC-V13"
+      },
+      {
+        "resource_code": "V13-R03",
+        "location_code": "LOC-V13"
+      },
+      {
+        "resource_code": "V14",
+        "location_code": "LOC-V14"
+      },
+      {
+        "resource_code": "V14-R01",
+        "location_code": "LOC-V14"
+      },
+      {
+        "resource_code": "V14-R02",
+        "location_code": "LOC-V14"
+      },
+      {
+        "resource_code": "V14-R03",
+        "location_code": "LOC-V14"
+      },
+      {
+        "resource_code": "V15",
+        "location_code": "LOC-V15"
+      },
+      {
+        "resource_code": "V15-R01",
+        "location_code": "LOC-V15"
+      },
+      {
+        "resource_code": "V15-R02",
+        "location_code": "LOC-V15"
+      },
+      {
+        "resource_code": "V15-R03",
+        "location_code": "LOC-V15"
+      },
+      {
+        "resource_code": "V16",
+        "location_code": "LOC-V16"
+      },
+      {
+        "resource_code": "V16-R01",
+        "location_code": "LOC-V16"
+      },
+      {
+        "resource_code": "V16-R02",
+        "location_code": "LOC-V16"
+      },
+      {
+        "resource_code": "V16-R03",
+        "location_code": "LOC-V16"
+      },
+      {
+        "resource_code": "V17",
+        "location_code": "LOC-V17"
+      },
+      {
+        "resource_code": "V17-R01",
+        "location_code": "LOC-V17"
+      },
+      {
+        "resource_code": "V17-R02",
+        "location_code": "LOC-V17"
+      },
+      {
+        "resource_code": "V17-R03",
+        "location_code": "LOC-V17"
+      },
+      {
+        "resource_code": "V18",
+        "location_code": "LOC-V18"
+      },
+      {
+        "resource_code": "V18-R01",
+        "location_code": "LOC-V18-G"
+      },
+      {
+        "resource_code": "V18-R02",
+        "location_code": "LOC-V18-G"
+      },
+      {
+        "resource_code": "V19",
+        "location_code": "LOC-V19"
+      },
+      {
+        "resource_code": "V19-R01",
+        "location_code": "LOC-V19-G"
+      },
+      {
+        "resource_code": "V19-R02",
+        "location_code": "LOC-V19-G"
+      },
+      {
+        "resource_code": "V19-R03",
+        "location_code": "LOC-V19-G"
+      },
+      {
+        "resource_code": "V20",
+        "location_code": "LOC-V20"
+      },
+      {
+        "resource_code": "V20-R01",
+        "location_code": "LOC-V20-G"
+      },
+      {
+        "resource_code": "V20-R02",
+        "location_code": "LOC-V20-G"
+      },
+      {
+        "resource_code": "V20-R03",
+        "location_code": "LOC-V20-G"
+      },
+      {
+        "resource_code": "V21",
+        "location_code": "LOC-V21"
+      },
+      {
+        "resource_code": "V21-R01",
+        "location_code": "LOC-V21-G"
+      },
+      {
+        "resource_code": "V21-R02",
+        "location_code": "LOC-V21-G"
+      },
+      {
+        "resource_code": "V22",
+        "location_code": "LOC-V22"
+      },
+      {
+        "resource_code": "V22-R01",
+        "location_code": "LOC-V22-G"
+      },
+      {
+        "resource_code": "V22-R02",
+        "location_code": "LOC-V22-G"
+      },
+      {
+        "resource_code": "V23",
+        "location_code": "LOC-V23"
+      },
+      {
+        "resource_code": "V23-R01",
+        "location_code": "LOC-V23-G"
+      },
+      {
+        "resource_code": "V24",
+        "location_code": "LOC-V24"
+      },
+      {
+        "resource_code": "V24-R01",
+        "location_code": "LOC-V24-G"
+      }
+    ],
+    "hold_null_resource_codes": [
+      "V01-R01",
+      "V01-R02",
+      "V01-R03",
+      "V01-R04",
+      "V03-R01",
+      "V03-R02",
+      "V03-R03",
+      "V04-R01",
+      "V04-R02",
+      "V05-R01",
+      "V05-R02",
+      "V05-R03",
+      "KL01",
+      "KL02",
+      "KL03",
+      "KL04",
+      "KL05",
+      "KL06"
+    ],
+    "expected_resource_codes": [
+      "KL01",
+      "KL02",
+      "KL03",
+      "KL04",
+      "KL05",
+      "KL06",
+      "V01",
+      "V01-R01",
+      "V01-R02",
+      "V01-R03",
+      "V01-R04",
+      "V02",
+      "V02-R01",
+      "V02-R02",
+      "V02-R03",
+      "V02-R04",
+      "V03",
+      "V03-R01",
+      "V03-R02",
+      "V03-R03",
+      "V04",
+      "V04-R01",
+      "V04-R02",
+      "V05",
+      "V05-R01",
+      "V05-R02",
+      "V05-R03",
+      "V06",
+      "V06-R01",
+      "V06-R02",
+      "V06-R03",
+      "V07",
+      "V07-R01",
+      "V07-R02",
+      "V07-R03",
+      "V08",
+      "V08-R01",
+      "V08-R02",
+      "V08-R03",
+      "V09",
+      "V09-R01",
+      "V09-R02",
+      "V09-R03",
+      "V10",
+      "V10-R01",
+      "V10-R02",
+      "V10-R03",
+      "V11",
+      "V11-R01",
+      "V11-R02",
+      "V11-R03",
+      "V12",
+      "V12-R01",
+      "V12-R02",
+      "V12-R03",
+      "V13",
+      "V13-R01",
+      "V13-R02",
+      "V13-R03",
+      "V14",
+      "V14-R01",
+      "V14-R02",
+      "V14-R03",
+      "V15",
+      "V15-R01",
+      "V15-R02",
+      "V15-R03",
+      "V16",
+      "V16-R01",
+      "V16-R02",
+      "V16-R03",
+      "V17",
+      "V17-R01",
+      "V17-R02",
+      "V17-R03",
+      "V18",
+      "V18-R01",
+      "V18-R02",
+      "V19",
+      "V19-R01",
+      "V19-R02",
+      "V19-R03",
+      "V20",
+      "V20-R01",
+      "V20-R02",
+      "V20-R03",
+      "V21",
+      "V21-R01",
+      "V21-R02",
+      "V22",
+      "V22-R01",
+      "V22-R02",
+      "V23",
+      "V23-R01",
+      "V24",
+      "V24-R01"
+    ],
+    "counts": {
+      "nodes": 43,
+      "assignments": 78,
+      "held_null": 18,
+      "resources": 96
+    },
+    "shared_rooms_note": "Each shared villa room is assigned to its villa node; its floor is inherited from the confirmed villa placement (6..11 ground, 12..17 second).",
+    "name_note": "Shared building — Villa 6..17 is an administrative descriptive name, not a confirmed official building name."
+  }
+}

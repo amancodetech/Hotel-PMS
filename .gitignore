@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+.local/
+*.tsbuildinfo
+*.xlsx
+packages/contracts/src/*.generated.ts
+packages/backend/src/persistence/migrations/.snapshot-*
+!packages/backend/src/persistence/migrations/.snapshot-hotel.json

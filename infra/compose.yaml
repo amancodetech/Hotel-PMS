@@ -1,0 +1,92 @@
+name: hotel-phase1
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_USER: hotel
+      POSTGRES_DB: hotel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run pnpm env:init}
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-55432}:5432'
+    volumes:
+      - application-db:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U hotel -d hotel']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt: [no-new-privileges:true]
+  redis:
+    image: redis:7.4.11-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Run pnpm env:init}
+    command:
+      [
+        sh,
+        -c,
+        'exec redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes',
+      ]
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-56379}:6379'
+    volumes:
+      - queue-data:/data
+    healthcheck:
+      test:
+        [
+          CMD-SHELL,
+          'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG',
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt: [no-new-privileges:true]
+  keycloak-db:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_DB: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?Run pnpm env:init}
+    volumes:
+      - identity-db:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U keycloak -d keycloak']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt: [no-new-privileges:true]
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.3
+    command: [start-dev]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?Run pnpm env:init}
+      KC_BOOTSTRAP_ADMIN_USERNAME: local-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Run pnpm env:init}
+      KC_HEALTH_ENABLED: 'true'
+      KC_METRICS_ENABLED: 'true'
+      KC_HTTP_HOST: 0.0.0.0
+    ports:
+      - '127.0.0.1:${KEYCLOAK_PORT:-58080}:8080'
+      - '127.0.0.1:${KEYCLOAK_HEALTH_PORT:-59000}:9000'
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          CMD,
+          bash,
+          -ec,
+          'exec 3<>/dev/tcp/127.0.0.1/9000; printf "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3; grep -q "200 OK" <&3',
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 30
+    security_opt: [no-new-privileges:true]
+volumes:
+  application-db:
+  identity-db:
+  queue-data:

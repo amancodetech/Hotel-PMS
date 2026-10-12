@@ -1,0 +1,1317 @@
+{
+  "schema_version": 1,
+  "purpose": "STRUCTURE_ONLY_PLANNING_NOT_EXECUTED",
+  "property_name_requested": "new pratama",
+  "source": {
+    "path": "/home/omar/Downloads/Laporan Harian Villa.xlsx",
+    "sha256": "958e654cdc828b1e2ccf357b094bdc39926a4a1840e0e7a108b30ddaf6c4c60c",
+    "sheet_count": 44,
+    "primary_sheet": "TEMPLATE",
+    "cross_checks": [
+      "Kinerja Villa",
+      "Panduan!B3:C3",
+      "Panduan!B6:C8"
+    ]
+  },
+  "limits": {
+    "not_guest_or_finance_import": true,
+    "codes_and_room_labels_are_proposals": true,
+    "room_count_is_not_guest_capacity": true,
+    "unknown_capacity_must_block_apply": true
+  },
+  "counts": {
+    "villas": 24,
+    "villa_rooms": 66,
+    "independent_rooms": 6,
+    "atomic_rooms": 72,
+    "operational_units_in_workbook": 30,
+    "villa_size_distribution": {
+      "1": 2,
+      "2": 4,
+      "3": 16,
+      "4": 2
+    }
+  },
+  "daily_structure_comparison": [
+    {
+      "sheet": "17-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "18-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "19-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "20-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "21-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "22-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "23-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "24-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "25-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "26-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "27-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "28-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "29-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "30-09-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "01-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "02-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "03-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "04-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "05-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "06-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "07-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "08-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "09-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "10-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "11-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "12-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "13-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "14-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "15-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "16-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "17-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "18-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    },
+    {
+      "sheet": "19-10-2026",
+      "structure_matches_template": true,
+      "compared_columns": [
+        "A",
+        "B"
+      ],
+      "rows": "4:76"
+    }
+  ],
+  "villas": [
+    {
+      "source_name": "Villa 1",
+      "proposed_code": "V01",
+      "villa_number": 1,
+      "rooms": [
+        {
+          "proposed_code": "V01-R01",
+          "parent_code": "V01",
+          "source_parent_name": "Villa 1",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 1 / Kamar 1",
+          "source_cell": "TEMPLATE!B4",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V01-R02",
+          "parent_code": "V01",
+          "source_parent_name": "Villa 1",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 1 / Kamar 2",
+          "source_cell": "TEMPLATE!B5",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V01-R03",
+          "parent_code": "V01",
+          "source_parent_name": "Villa 1",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 1 / Kamar 3",
+          "source_cell": "TEMPLATE!B6",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V01-R04",
+          "parent_code": "V01",
+          "source_parent_name": "Villa 1",
+          "source_room_number": 4,
+          "proposed_display_label": "Villa 1 / Kamar 4",
+          "source_cell": "TEMPLATE!B7",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A4",
+      "performance_cell": "Kinerja Villa!A5",
+      "source_type": "Villa 4 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 2",
+      "proposed_code": "V02",
+      "villa_number": 2,
+      "rooms": [
+        {
+          "proposed_code": "V02-R01",
+          "parent_code": "V02",
+          "source_parent_name": "Villa 2",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 2 / Kamar 1",
+          "source_cell": "TEMPLATE!B8",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V02-R02",
+          "parent_code": "V02",
+          "source_parent_name": "Villa 2",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 2 / Kamar 2",
+          "source_cell": "TEMPLATE!B9",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V02-R03",
+          "parent_code": "V02",
+          "source_parent_name": "Villa 2",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 2 / Kamar 3",
+          "source_cell": "TEMPLATE!B10",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V02-R04",
+          "parent_code": "V02",
+          "source_parent_name": "Villa 2",
+          "source_room_number": 4,
+          "proposed_display_label": "Villa 2 / Kamar 4",
+          "source_cell": "TEMPLATE!B11",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A8",
+      "performance_cell": "Kinerja Villa!A6",
+      "source_type": "Villa 4 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 3",
+      "proposed_code": "V03",
+      "villa_number": 3,
+      "rooms": [
+        {
+          "proposed_code": "V03-R01",
+          "parent_code": "V03",
+          "source_parent_name": "Villa 3",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 3 / Kamar 1",
+          "source_cell": "TEMPLATE!B12",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V03-R02",
+          "parent_code": "V03",
+          "source_parent_name": "Villa 3",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 3 / Kamar 2",
+          "source_cell": "TEMPLATE!B13",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V03-R03",
+          "parent_code": "V03",
+          "source_parent_name": "Villa 3",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 3 / Kamar 3",
+          "source_cell": "TEMPLATE!B14",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A12",
+      "performance_cell": "Kinerja Villa!A7",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 4",
+      "proposed_code": "V04",
+      "villa_number": 4,
+      "rooms": [
+        {
+          "proposed_code": "V04-R01",
+          "parent_code": "V04",
+          "source_parent_name": "Villa 4",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 4 / Kamar 1",
+          "source_cell": "TEMPLATE!B15",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V04-R02",
+          "parent_code": "V04",
+          "source_parent_name": "Villa 4",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 4 / Kamar 2",
+          "source_cell": "TEMPLATE!B16",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A15",
+      "performance_cell": "Kinerja Villa!A8",
+      "source_type": "Villa 2 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 5",
+      "proposed_code": "V05",
+      "villa_number": 5,
+      "rooms": [
+        {
+          "proposed_code": "V05-R01",
+          "parent_code": "V05",
+          "source_parent_name": "Villa 5",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 5 / Kamar 1",
+          "source_cell": "TEMPLATE!B17",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V05-R02",
+          "parent_code": "V05",
+          "source_parent_name": "Villa 5",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 5 / Kamar 2",
+          "source_cell": "TEMPLATE!B18",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V05-R03",
+          "parent_code": "V05",
+          "source_parent_name": "Villa 5",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 5 / Kamar 3",
+          "source_cell": "TEMPLATE!B19",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A17",
+      "performance_cell": "Kinerja Villa!A9",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 6",
+      "proposed_code": "V06",
+      "villa_number": 6,
+      "rooms": [
+        {
+          "proposed_code": "V06-R01",
+          "parent_code": "V06",
+          "source_parent_name": "Villa 6",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 6 / Kamar 1",
+          "source_cell": "TEMPLATE!B20",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V06-R02",
+          "parent_code": "V06",
+          "source_parent_name": "Villa 6",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 6 / Kamar 2",
+          "source_cell": "TEMPLATE!B21",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V06-R03",
+          "parent_code": "V06",
+          "source_parent_name": "Villa 6",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 6 / Kamar 3",
+          "source_cell": "TEMPLATE!B22",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A20",
+      "performance_cell": "Kinerja Villa!A10",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 7",
+      "proposed_code": "V07",
+      "villa_number": 7,
+      "rooms": [
+        {
+          "proposed_code": "V07-R01",
+          "parent_code": "V07",
+          "source_parent_name": "Villa 7",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 7 / Kamar 1",
+          "source_cell": "TEMPLATE!B23",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V07-R02",
+          "parent_code": "V07",
+          "source_parent_name": "Villa 7",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 7 / Kamar 2",
+          "source_cell": "TEMPLATE!B24",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V07-R03",
+          "parent_code": "V07",
+          "source_parent_name": "Villa 7",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 7 / Kamar 3",
+          "source_cell": "TEMPLATE!B25",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A23",
+      "performance_cell": "Kinerja Villa!A11",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 8",
+      "proposed_code": "V08",
+      "villa_number": 8,
+      "rooms": [
+        {
+          "proposed_code": "V08-R01",
+          "parent_code": "V08",
+          "source_parent_name": "Villa 8",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 8 / Kamar 1",
+          "source_cell": "TEMPLATE!B26",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V08-R02",
+          "parent_code": "V08",
+          "source_parent_name": "Villa 8",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 8 / Kamar 2",
+          "source_cell": "TEMPLATE!B27",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V08-R03",
+          "parent_code": "V08",
+          "source_parent_name": "Villa 8",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 8 / Kamar 3",
+          "source_cell": "TEMPLATE!B28",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A26",
+      "performance_cell": "Kinerja Villa!A12",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 9",
+      "proposed_code": "V09",
+      "villa_number": 9,
+      "rooms": [
+        {
+          "proposed_code": "V09-R01",
+          "parent_code": "V09",
+          "source_parent_name": "Villa 9",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 9 / Kamar 1",
+          "source_cell": "TEMPLATE!B29",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V09-R02",
+          "parent_code": "V09",
+          "source_parent_name": "Villa 9",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 9 / Kamar 2",
+          "source_cell": "TEMPLATE!B30",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V09-R03",
+          "parent_code": "V09",
+          "source_parent_name": "Villa 9",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 9 / Kamar 3",
+          "source_cell": "TEMPLATE!B31",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A29",
+      "performance_cell": "Kinerja Villa!A13",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 10",
+      "proposed_code": "V10",
+      "villa_number": 10,
+      "rooms": [
+        {
+          "proposed_code": "V10-R01",
+          "parent_code": "V10",
+          "source_parent_name": "Villa 10",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 10 / Kamar 1",
+          "source_cell": "TEMPLATE!B32",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V10-R02",
+          "parent_code": "V10",
+          "source_parent_name": "Villa 10",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 10 / Kamar 2",
+          "source_cell": "TEMPLATE!B33",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V10-R03",
+          "parent_code": "V10",
+          "source_parent_name": "Villa 10",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 10 / Kamar 3",
+          "source_cell": "TEMPLATE!B34",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A32",
+      "performance_cell": "Kinerja Villa!A14",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 11",
+      "proposed_code": "V11",
+      "villa_number": 11,
+      "rooms": [
+        {
+          "proposed_code": "V11-R01",
+          "parent_code": "V11",
+          "source_parent_name": "Villa 11",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 11 / Kamar 1",
+          "source_cell": "TEMPLATE!B35",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V11-R02",
+          "parent_code": "V11",
+          "source_parent_name": "Villa 11",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 11 / Kamar 2",
+          "source_cell": "TEMPLATE!B36",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V11-R03",
+          "parent_code": "V11",
+          "source_parent_name": "Villa 11",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 11 / Kamar 3",
+          "source_cell": "TEMPLATE!B37",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A35",
+      "performance_cell": "Kinerja Villa!A15",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 12",
+      "proposed_code": "V12",
+      "villa_number": 12,
+      "rooms": [
+        {
+          "proposed_code": "V12-R01",
+          "parent_code": "V12",
+          "source_parent_name": "Villa 12",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 12 / Kamar 1",
+          "source_cell": "TEMPLATE!B38",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V12-R02",
+          "parent_code": "V12",
+          "source_parent_name": "Villa 12",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 12 / Kamar 2",
+          "source_cell": "TEMPLATE!B39",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V12-R03",
+          "parent_code": "V12",
+          "source_parent_name": "Villa 12",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 12 / Kamar 3",
+          "source_cell": "TEMPLATE!B40",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A38",
+      "performance_cell": "Kinerja Villa!A16",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 13",
+      "proposed_code": "V13",
+      "villa_number": 13,
+      "rooms": [
+        {
+          "proposed_code": "V13-R01",
+          "parent_code": "V13",
+          "source_parent_name": "Villa 13",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 13 / Kamar 1",
+          "source_cell": "TEMPLATE!B41",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V13-R02",
+          "parent_code": "V13",
+          "source_parent_name": "Villa 13",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 13 / Kamar 2",
+          "source_cell": "TEMPLATE!B42",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V13-R03",
+          "parent_code": "V13",
+          "source_parent_name": "Villa 13",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 13 / Kamar 3",
+          "source_cell": "TEMPLATE!B43",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A41",
+      "performance_cell": "Kinerja Villa!A17",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 14",
+      "proposed_code": "V14",
+      "villa_number": 14,
+      "rooms": [
+        {
+          "proposed_code": "V14-R01",
+          "parent_code": "V14",
+          "source_parent_name": "Villa 14",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 14 / Kamar 1",
+          "source_cell": "TEMPLATE!B44",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V14-R02",
+          "parent_code": "V14",
+          "source_parent_name": "Villa 14",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 14 / Kamar 2",
+          "source_cell": "TEMPLATE!B45",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V14-R03",
+          "parent_code": "V14",
+          "source_parent_name": "Villa 14",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 14 / Kamar 3",
+          "source_cell": "TEMPLATE!B46",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A44",
+      "performance_cell": "Kinerja Villa!A18",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 15",
+      "proposed_code": "V15",
+      "villa_number": 15,
+      "rooms": [
+        {
+          "proposed_code": "V15-R01",
+          "parent_code": "V15",
+          "source_parent_name": "Villa 15",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 15 / Kamar 1",
+          "source_cell": "TEMPLATE!B47",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V15-R02",
+          "parent_code": "V15",
+          "source_parent_name": "Villa 15",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 15 / Kamar 2",
+          "source_cell": "TEMPLATE!B48",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V15-R03",
+          "parent_code": "V15",
+          "source_parent_name": "Villa 15",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 15 / Kamar 3",
+          "source_cell": "TEMPLATE!B49",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A47",
+      "performance_cell": "Kinerja Villa!A19",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 16",
+      "proposed_code": "V16",
+      "villa_number": 16,
+      "rooms": [
+        {
+          "proposed_code": "V16-R01",
+          "parent_code": "V16",
+          "source_parent_name": "Villa 16",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 16 / Kamar 1",
+          "source_cell": "TEMPLATE!B50",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V16-R02",
+          "parent_code": "V16",
+          "source_parent_name": "Villa 16",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 16 / Kamar 2",
+          "source_cell": "TEMPLATE!B51",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V16-R03",
+          "parent_code": "V16",
+          "source_parent_name": "Villa 16",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 16 / Kamar 3",
+          "source_cell": "TEMPLATE!B52",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A50",
+      "performance_cell": "Kinerja Villa!A20",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 17",
+      "proposed_code": "V17",
+      "villa_number": 17,
+      "rooms": [
+        {
+          "proposed_code": "V17-R01",
+          "parent_code": "V17",
+          "source_parent_name": "Villa 17",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 17 / Kamar 1",
+          "source_cell": "TEMPLATE!B53",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V17-R02",
+          "parent_code": "V17",
+          "source_parent_name": "Villa 17",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 17 / Kamar 2",
+          "source_cell": "TEMPLATE!B54",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V17-R03",
+          "parent_code": "V17",
+          "source_parent_name": "Villa 17",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 17 / Kamar 3",
+          "source_cell": "TEMPLATE!B55",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A53",
+      "performance_cell": "Kinerja Villa!A21",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 18",
+      "proposed_code": "V18",
+      "villa_number": 18,
+      "rooms": [
+        {
+          "proposed_code": "V18-R01",
+          "parent_code": "V18",
+          "source_parent_name": "Villa 18",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 18 / Kamar 1",
+          "source_cell": "TEMPLATE!B56",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V18-R02",
+          "parent_code": "V18",
+          "source_parent_name": "Villa 18",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 18 / Kamar 2",
+          "source_cell": "TEMPLATE!B57",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A56",
+      "performance_cell": "Kinerja Villa!A22",
+      "source_type": "Villa 2 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 19",
+      "proposed_code": "V19",
+      "villa_number": 19,
+      "rooms": [
+        {
+          "proposed_code": "V19-R01",
+          "parent_code": "V19",
+          "source_parent_name": "Villa 19",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 19 / Kamar 1",
+          "source_cell": "TEMPLATE!B58",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V19-R02",
+          "parent_code": "V19",
+          "source_parent_name": "Villa 19",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 19 / Kamar 2",
+          "source_cell": "TEMPLATE!B59",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V19-R03",
+          "parent_code": "V19",
+          "source_parent_name": "Villa 19",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 19 / Kamar 3",
+          "source_cell": "TEMPLATE!B60",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A58",
+      "performance_cell": "Kinerja Villa!A23",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 20",
+      "proposed_code": "V20",
+      "villa_number": 20,
+      "rooms": [
+        {
+          "proposed_code": "V20-R01",
+          "parent_code": "V20",
+          "source_parent_name": "Villa 20",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 20 / Kamar 1",
+          "source_cell": "TEMPLATE!B61",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V20-R02",
+          "parent_code": "V20",
+          "source_parent_name": "Villa 20",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 20 / Kamar 2",
+          "source_cell": "TEMPLATE!B62",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V20-R03",
+          "parent_code": "V20",
+          "source_parent_name": "Villa 20",
+          "source_room_number": 3,
+          "proposed_display_label": "Villa 20 / Kamar 3",
+          "source_cell": "TEMPLATE!B63",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A61",
+      "performance_cell": "Kinerja Villa!A24",
+      "source_type": "Villa 3 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 21",
+      "proposed_code": "V21",
+      "villa_number": 21,
+      "rooms": [
+        {
+          "proposed_code": "V21-R01",
+          "parent_code": "V21",
+          "source_parent_name": "Villa 21",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 21 / Kamar 1",
+          "source_cell": "TEMPLATE!B64",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V21-R02",
+          "parent_code": "V21",
+          "source_parent_name": "Villa 21",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 21 / Kamar 2",
+          "source_cell": "TEMPLATE!B65",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A64",
+      "performance_cell": "Kinerja Villa!A25",
+      "source_type": "Villa 2 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 22",
+      "proposed_code": "V22",
+      "villa_number": 22,
+      "rooms": [
+        {
+          "proposed_code": "V22-R01",
+          "parent_code": "V22",
+          "source_parent_name": "Villa 22",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 22 / Kamar 1",
+          "source_cell": "TEMPLATE!B66",
+          "capacity": null
+        },
+        {
+          "proposed_code": "V22-R02",
+          "parent_code": "V22",
+          "source_parent_name": "Villa 22",
+          "source_room_number": 2,
+          "proposed_display_label": "Villa 22 / Kamar 2",
+          "source_cell": "TEMPLATE!B67",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A66",
+      "performance_cell": "Kinerja Villa!A26",
+      "source_type": "Villa 2 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 23",
+      "proposed_code": "V23",
+      "villa_number": 23,
+      "rooms": [
+        {
+          "proposed_code": "V23-R01",
+          "parent_code": "V23",
+          "source_parent_name": "Villa 23",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 23 / Kamar 1",
+          "source_cell": "TEMPLATE!B68",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A68",
+      "performance_cell": "Kinerja Villa!A27",
+      "source_type": "Villa 1 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    },
+    {
+      "source_name": "Villa 24",
+      "proposed_code": "V24",
+      "villa_number": 24,
+      "rooms": [
+        {
+          "proposed_code": "V24-R01",
+          "parent_code": "V24",
+          "source_parent_name": "Villa 24",
+          "source_room_number": 1,
+          "proposed_display_label": "Villa 24 / Kamar 1",
+          "source_cell": "TEMPLATE!B69",
+          "capacity": null
+        }
+      ],
+      "source_cell": "TEMPLATE!A69",
+      "performance_cell": "Kinerja Villa!A28",
+      "source_type": "Villa 1 Kamar",
+      "capacity": null,
+      "whole_capacity": null,
+      "privacy_ack": null
+    }
+  ],
+  "independent_rooms": [
+    {
+      "proposed_code": "KL01",
+      "parent_code": null,
+      "source_parent_name": null,
+      "source_room_number": 1,
+      "proposed_display_label": "Kamar Lepas 1",
+      "source_cell": "TEMPLATE!B71",
+      "performance_cell": "Kinerja Villa!A29",
+      "capacity": null
+    },
+    {
+      "proposed_code": "KL02",
+      "parent_code": null,
+      "source_parent_name": null,
+      "source_room_number": 2,
+      "proposed_display_label": "Kamar Lepas 2",
+      "source_cell": "TEMPLATE!B72",
+      "performance_cell": "Kinerja Villa!A30",
+      "capacity": null
+    },
+    {
+      "proposed_code": "KL03",
+      "parent_code": null,
+      "source_parent_name": null,
+      "source_room_number": 3,
+      "proposed_display_label": "Kamar Lepas 3",
+      "source_cell": "TEMPLATE!B73",
+      "performance_cell": "Kinerja Villa!A31",
+      "capacity": null
+    },
+    {
+      "proposed_code": "KL04",
+      "parent_code": null,
+      "source_parent_name": null,
+      "source_room_number": 4,
+      "proposed_display_label": "Kamar Lepas 4",
+      "source_cell": "TEMPLATE!B74",
+      "performance_cell": "Kinerja Villa!A32",
+      "capacity": null
+    },
+    {
+      "proposed_code": "KL05",
+      "parent_code": null,
+      "source_parent_name": null,
+      "source_room_number": 5,
+      "proposed_display_label": "Kamar Lepas 5",
+      "source_cell": "TEMPLATE!B75",
+      "performance_cell": "Kinerja Villa!A33",
+      "capacity": null
+    },
+    {
+      "proposed_code": "KL06",
+      "parent_code": null,
+      "source_parent_name": null,
+      "source_room_number": 6,
+      "proposed_display_label": "Kamar Lepas 6",
+      "source_cell": "TEMPLATE!B76",
+      "performance_cell": "Kinerja Villa!A34",
+      "capacity": null
+    }
+  ],
+  "missing": {
+    "tenant": null,
+    "address": null,
+    "timezone": null,
+    "guest_capacities": null,
+    "rates": null,
+    "privacy_and_access": null,
+    "effective_from": null,
+    "check_in": null,
+    "check_out": null,
+    "tax": null,
+    "channel_mapping": null
+  }
+}

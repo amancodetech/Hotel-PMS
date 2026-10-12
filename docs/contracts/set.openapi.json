@@ -1,0 +1,4238 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL PMS SAAS - SET setup contract (design)",
+    "version": "0.1.0",
+    "description": "Design contract for the property setup wizard (docs/94, SET-01..SET-06). Operations become implemented progressively; SET-03 implements draft save/resume and templates. No operation in this file is implemented until its SET package card and tests record it. Draft storage is server-side, scoped by tenant and property, revision-checked and idempotent; preview and simulation never create reservations or write inventory, and readiness is not activation."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "parameters": {
+      "TenantId": {
+        "name": "tenantId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PropertyId": {
+        "name": "propertyId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Csrf": {
+        "name": "x-csrf-token",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 32
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128
+        }
+      },
+      "IfMatch": {
+        "name": "If-Match",
+        "in": "header",
+        "required": false,
+        "description": "Draft generation and revision as a quoted ETag \"<draft_id>:<revision>\". Required when a draft already exists; omit to create the first revision. A stale generation or revision fails with 412 SETUP_DRAFT_STALE and the current etag is returned in details.",
+        "schema": {
+          "type": "string",
+          "pattern": "^\"[0-9a-fA-F-]{36}:[0-9]+\"$"
+        }
+      },
+      "CompositionId": {
+        "name": "compositionId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Safe error envelope with a stable code and correlation id",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "correlation_id"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "SetupTemplate": {
+        "description": "Server-owned catalog entry that maps a user-facing template to an existing resource type and safe defaults. Templates never create a parallel inventory engine.",
+        "type": "object",
+        "required": [
+          "code",
+          "resource_type",
+          "default_rental_mode",
+          "supports_parts",
+          "supports_beds"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "ROOM",
+              "CABIN",
+              "TENT",
+              "VILLA",
+              "APARTMENT",
+              "DORM",
+              "SITE",
+              "SUITE"
+            ]
+          },
+          "resource_type": {
+            "type": "string",
+            "enum": [
+              "ROOM",
+              "BED",
+              "VILLA",
+              "APARTMENT",
+              "HOUSE",
+              "SITE",
+              "TENT",
+              "CABIN"
+            ]
+          },
+          "default_rental_mode": {
+            "type": "string",
+            "enum": [
+              "EXCLUSIVE",
+              "WHOLE_OR_PARTS",
+              "BEDS"
+            ]
+          },
+          "supports_parts": {
+            "type": "boolean"
+          },
+          "supports_beds": {
+            "type": "boolean"
+          },
+          "default_capacity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 100
+          },
+          "guaranteed_setup_options": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "KING",
+                "TWIN"
+              ]
+            }
+          }
+        }
+      },
+      "SetupRentalMode": {
+        "type": "string",
+        "enum": [
+          "EXCLUSIVE",
+          "WHOLE_OR_PARTS",
+          "BEDS"
+        ]
+      },
+      "SetupUnitGroup": {
+        "description": "One batch of equivalent units inside the draft. pattern expands server-side; exclusions remove numbers; duplicate codes inside or across groups are rejected.",
+        "type": "object",
+        "required": [
+          "template_code",
+          "pattern",
+          "rental_mode"
+        ],
+        "properties": {
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64
+          },
+          "template_code": {
+            "type": "string",
+            "enum": [
+              "ROOM",
+              "CABIN",
+              "TENT",
+              "VILLA",
+              "APARTMENT",
+              "DORM",
+              "SITE",
+              "SUITE"
+            ]
+          },
+          "pattern": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "exclusions": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "type": "string",
+              "maxLength": 16
+            }
+          },
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 100
+          },
+          "location_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 40
+          },
+          "rental_mode": {
+            "$ref": "#/components/schemas/SetupRentalMode"
+          },
+          "privacy_ack": {
+            "type": "boolean",
+            "description": "Required when rental_mode is WHOLE_OR_PARTS; the system never infers privacy from the unit name."
+          },
+          "sharing_scope": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "MIXED",
+              null
+            ],
+            "description": "Only MIXED is accepted until reservation intake enforces guest eligibility. Restricted FEMALE/MALE policies fail closed."
+          },
+          "beds_per_unit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 50
+          },
+          "guaranteed_specs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "KING",
+                "TWIN"
+              ]
+            }
+          },
+          "parts": {
+            "type": "array",
+            "maxItems": 20,
+            "description": "Explicit user-declared parts for WHOLE_OR_PARTS villas and apartments. The server never infers bedrooms from the template.",
+            "items": {
+              "$ref": "#/components/schemas/SetupPart"
+            }
+          },
+          "connected_codes": {
+            "type": "array",
+            "maxItems": 20,
+            "description": "Existing unit codes linked by a SUITE group. No resource is created and adjacency is never inferred.",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            }
+          }
+        }
+      },
+      "SetupDraftInput": {
+        "description": "Partial wizard input. SaveSetupDraft accepts incomplete drafts (empty name, no unit group, missing pricing); completeness, privacy acknowledgment and sellability are enforced later by GetSetupReadiness and ApplySetupDraft, never by silently inventing values.",
+        "type": "object",
+        "properties": {
+          "property": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 2,
+                "maxLength": 120
+              },
+              "code": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 20
+              },
+              "country": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 60
+              },
+              "timezone": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "Asia/Jakarta",
+                  "Asia/Makassar",
+                  "Asia/Jayapura",
+                  null
+                ]
+              },
+              "base_currency": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "IDR",
+                  "USD",
+                  null
+                ]
+              },
+              "types": {
+                "type": "array",
+                "maxItems": 8,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "ROOM",
+                    "CABIN",
+                    "TENT",
+                    "VILLA",
+                    "APARTMENT",
+                    "DORM",
+                    "SITE",
+                    "SUITE"
+                  ]
+                }
+              }
+            }
+          },
+          "unit_groups": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/SetupUnitGroup"
+            }
+          },
+          "operations": {
+            "type": "object",
+            "properties": {
+              "check_in": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+              },
+              "check_out": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+              },
+              "inspection_required": {
+                "type": "boolean"
+              },
+              "explicit_states": {
+                "type": "boolean",
+                "description": "Must be true before apply; no bulk CLEAN assignment is inferred."
+              }
+            }
+          },
+          "pricing": {
+            "type": "object",
+            "required": [
+              "postponed"
+            ],
+            "properties": {
+              "postponed": {
+                "type": "boolean"
+              },
+              "plan_name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 80
+              },
+              "sell_from": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "sell_to": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "base_price": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9]{1,14}(\\.[0-9]{1,6})?$"
+              }
+            }
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "property",
+          "unit_groups",
+          "operations"
+        ]
+      },
+      "SetupDraft": {
+        "description": "Server-held wizard draft. One draft per property; every recreated draft gets a new draft_id so old-generation requests and replays cannot touch it; revision increments on every accepted save and drives If-Match together with draft_id.",
+        "type": "object",
+        "required": [
+          "draft_id",
+          "property_id",
+          "revision",
+          "updated_at",
+          "input"
+        ],
+        "properties": {
+          "draft_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "property_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_by_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "input": {
+            "$ref": "#/components/schemas/VersionedSetupDraftInput"
+          }
+        }
+      },
+      "SetupDraftEnvelope": {
+        "type": "object",
+        "properties": {
+          "draft": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SetupDraft"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "SetupGeneratedPreview": {
+        "type": "object",
+        "required": [
+          "total_units",
+          "by_template"
+        ],
+        "properties": {
+          "total_units": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "by_template": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "template_code",
+                "units",
+                "parts",
+                "compositions"
+              ],
+              "properties": {
+                "template_code": {
+                  "type": "string"
+                },
+                "units": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "rooms": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "beds": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "sites": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "parts": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "compositions": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "codes_preview": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "string"
+            }
+          },
+          "excluded_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SetupDraftPreview": {
+        "description": "Read-only expansion of the stored draft. preview_version is a digest binding the draft revision, the normalized draft input and inventory_version, so any material save or inventory change invalidates it. Apply must present a matching digest or fail closed with PREVIEW_STALE; the digest is not a preview counter and never proves validity by itself. V2 additionally binds tenant/property, location and resource state, allocations/blocks/exposure, composition state, operations policy and limits. New existing-location edits must use the location PATCH operation.",
+        "type": "object",
+        "required": [
+          "preview_version",
+          "draft_revision",
+          "inventory_version",
+          "generated",
+          "blockers"
+        ],
+        "properties": {
+          "preview_version": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "draft_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "inventory_version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "generated": {
+            "$ref": "#/components/schemas/SetupGeneratedPreview"
+          },
+          "limits": {
+            "type": "object",
+            "required": [
+              "max_units_inline",
+              "resource_capacity_remaining"
+            ],
+            "properties": {
+              "max_units_inline": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "resource_capacity_remaining": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupIssue"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupIssue"
+            }
+          },
+          "batch_plan": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "total_batches": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "total_batches"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "SetupIssue": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "step": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "PROPERTY",
+              "UNITS",
+              "RENTAL",
+              "OPERATIONS",
+              "PRICING",
+              "REVIEW",
+              null
+            ]
+          },
+          "group_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "field": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "SetupReadiness": {
+        "description": "Server-computed gaps for the setup screen. Readiness is reporting plus explicit enforcement, not activation: ApplySetupDraft refuses with SETUP_READINESS_BLOCKED while blocking gaps exist, and changing a property with a stored incomplete draft to ACTIVE is refused with the same code until the draft is ready. Existing operations of running properties are not frozen, opening sale stays with the rate-plan operations and channel activation stays with its external gates.",
+        "x-readiness-enforced-by": [
+          "ApplySetupDraft",
+          "UpdateProperty(SETUP->ACTIVE with a stored draft)"
+        ],
+        "type": "object",
+        "required": [
+          "ready",
+          "missing",
+          "checked_at"
+        ],
+        "properties": {
+          "ready": {
+            "type": "boolean"
+          },
+          "missing": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupIssue"
+            }
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "draft_revision": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          }
+        }
+      },
+      "SetupApplyResult": {
+        "type": "object",
+        "required": [
+          "property_id",
+          "created_units",
+          "created_products",
+          "created_compositions",
+          "inventory_version",
+          "applied_at"
+        ],
+        "properties": {
+          "property_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_units": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_products": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_compositions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_rate_plan": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "inventory_version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "applied_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "follow_up_tasks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SetupUnitImportRow": {
+        "type": "object",
+        "required": [
+          "line_no",
+          "status"
+        ],
+        "properties": {
+          "line_no": {
+            "type": "integer"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "template_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "location_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "REJECTED",
+              "CREATED"
+            ]
+          },
+          "error_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "SetupSimulationResult": {
+        "description": "Server-side exclusivity simulation. It creates no reservation, hold, block or journal entry.",
+        "type": "object",
+        "required": [
+          "scope",
+          "allowed",
+          "blocked",
+          "explanation"
+        ],
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "WHOLE",
+              "PART",
+              "BED"
+            ]
+          },
+          "allowed": {
+            "type": "boolean"
+          },
+          "blocked": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "kind",
+                "code"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "UNIT",
+                    "PART",
+                    "BED",
+                    "ROOM",
+                    "WHOLE"
+                  ]
+                },
+                "code": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "available_after": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "explanation": {
+            "type": "string"
+          }
+        }
+      },
+      "SetupPart": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9-]{1,16}$"
+          },
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 100
+          }
+        }
+      },
+      "CompositionLeafView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id",
+          "code",
+          "resource_type"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "resource_type": {
+            "type": "string"
+          }
+        }
+      },
+      "ResourceAllocationView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "commitment_id",
+          "source_kind",
+          "resource_id",
+          "resource_code",
+          "start_date",
+          "end_date",
+          "product_id",
+          "expires_at"
+        ],
+        "properties": {
+          "commitment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source_kind": {
+            "type": "string",
+            "enum": [
+              "HOLD",
+              "ITEM",
+              "GROUP"
+            ]
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_code": {
+            "type": "string"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "product_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ResourceBlockView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "block_id",
+          "resource_id",
+          "resource_code",
+          "mode",
+          "start_date",
+          "end_date"
+        ],
+        "properties": {
+          "block_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_code": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "CompositionChangeInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "effective_from",
+          "resource_ids"
+        ],
+        "properties": {
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "effective_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "resource_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "CompositionChangeApplyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "effective_from",
+          "resource_ids",
+          "preview_fingerprint"
+        ],
+        "properties": {
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "effective_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "resource_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "preview_fingerprint": {
+            "type": "string",
+            "regex": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "CompositionChangeImpact": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "verdict",
+          "fingerprint",
+          "product_id",
+          "product_code",
+          "composition_id",
+          "current",
+          "proposed",
+          "conflicts",
+          "retained_commitments",
+          "removed_leaves",
+          "intersecting_blocks"
+        ],
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "SAFE",
+              "BLOCKED"
+            ]
+          },
+          "fingerprint": {
+            "type": "string",
+            "regex": "^[a-f0-9]{64}$"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_code": {
+            "type": "string"
+          },
+          "composition_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "current": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "composition",
+              "leaves"
+            ],
+            "properties": {
+              "composition": {
+                "$ref": "#/components/schemas/Composition"
+              },
+              "leaves": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CompositionLeafView"
+                }
+              }
+            }
+          },
+          "proposed": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "effective_from",
+              "effective_to",
+              "leaves"
+            ],
+            "properties": {
+              "effective_from": {
+                "type": "string",
+                "format": "date"
+              },
+              "effective_to": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "leaves": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CompositionLeafView"
+                }
+              }
+            }
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceAllocationView"
+            }
+          },
+          "retained_commitments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceAllocationView"
+            }
+          },
+          "removed_leaves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompositionLeafView"
+            }
+          },
+          "intersecting_blocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceBlockView"
+            }
+          }
+        }
+      },
+      "CompositionChangeResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "composition",
+          "superseded",
+          "fingerprint"
+        ],
+        "properties": {
+          "composition": {
+            "$ref": "#/components/schemas/Composition"
+          },
+          "superseded": {
+            "$ref": "#/components/schemas/Composition"
+          },
+          "fingerprint": {
+            "type": "string",
+            "regex": "^[a-f0-9]{64}$"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MigrationInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "product_id",
+          "effective_from",
+          "resource_ids"
+        ],
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "effective_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "resource_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "MigrationApplyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "product_id",
+          "effective_from",
+          "resource_ids",
+          "preview_fingerprint"
+        ],
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "effective_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "resource_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "preview_fingerprint": {
+            "type": "string",
+            "regex": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "MigrationCounts": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resources",
+          "future_commitments",
+          "active_compositions",
+          "product_active_versions"
+        ],
+        "properties": {
+          "resources": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "future_commitments": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active_compositions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "product_active_versions": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "MigrationPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "verdict",
+          "fingerprint",
+          "product_id",
+          "product_code",
+          "effective_from",
+          "effective_to",
+          "leaves",
+          "conflicts",
+          "intersecting_blocks",
+          "before",
+          "after"
+        ],
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "SAFE",
+              "BLOCKED"
+            ]
+          },
+          "fingerprint": {
+            "type": "string",
+            "regex": "^[a-f0-9]{64}$"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_code": {
+            "type": "string"
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "effective_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "leaves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompositionLeafView"
+            }
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceAllocationView"
+            }
+          },
+          "intersecting_blocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceBlockView"
+            }
+          },
+          "before": {
+            "$ref": "#/components/schemas/MigrationCounts"
+          },
+          "after": {
+            "$ref": "#/components/schemas/MigrationCounts"
+          }
+        }
+      },
+      "MigrationReconciliation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "before",
+          "after",
+          "resource_ids_preserved",
+          "resource_ids"
+        ],
+        "properties": {
+          "before": {
+            "$ref": "#/components/schemas/MigrationCounts"
+          },
+          "after": {
+            "$ref": "#/components/schemas/MigrationCounts"
+          },
+          "resource_ids_preserved": {
+            "type": "boolean"
+          },
+          "resource_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 32
+          }
+        }
+      },
+      "MigrationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "composition",
+          "reconciliation",
+          "fingerprint"
+        ],
+        "properties": {
+          "composition": {
+            "$ref": "#/components/schemas/Composition"
+          },
+          "reconciliation": {
+            "$ref": "#/components/schemas/MigrationReconciliation"
+          },
+          "fingerprint": {
+            "type": "string",
+            "regex": "^[a-f0-9]{64}$"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CompositionWindow": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "composition_id",
+          "product_id",
+          "product_code",
+          "product_name",
+          "version_number",
+          "effective_from",
+          "effective_to",
+          "status"
+        ],
+        "properties": {
+          "composition_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_code": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "version_number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "effective_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "RETIRED"
+            ]
+          }
+        }
+      },
+      "SetupChangeEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "property_id",
+          "actor_type",
+          "actor_id",
+          "actor_label",
+          "action",
+          "resource_type",
+          "resource_id",
+          "outcome",
+          "before_safe",
+          "after_safe",
+          "reason",
+          "correlation_id",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "property_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "actor_type": {
+            "type": "string"
+          },
+          "actor_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "actor_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "action": {
+            "type": "string"
+          },
+          "resource_type": {
+            "type": "string"
+          },
+          "resource_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "before_safe": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          },
+          "after_safe": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "correlation_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SetupChangeList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupChangeEvent"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "SetupCounts": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "locations",
+          "resources",
+          "resources_active",
+          "resources_retired",
+          "products",
+          "products_active",
+          "products_draft",
+          "compositions_active",
+          "compositions_draft"
+        ],
+        "properties": {
+          "locations": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "resources": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "resources_active": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "resources_retired": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "products": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "products_active": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "products_draft": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "compositions_active": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "compositions_draft": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "SetupSettings": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "property",
+          "setup",
+          "counts",
+          "scheduled_changes",
+          "recent_changes"
+        ],
+        "properties": {
+          "property": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "code",
+              "name",
+              "status",
+              "timezone",
+              "base_currency",
+              "inventory_version"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "code": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "timezone": {
+                "type": "string"
+              },
+              "base_currency": {
+                "type": "string"
+              },
+              "inventory_version": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "setup": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "draft_present",
+              "draft_completed",
+              "draft_revision",
+              "draft_updated_at"
+            ],
+            "properties": {
+              "draft_present": {
+                "type": "boolean"
+              },
+              "draft_completed": {
+                "type": "boolean"
+              },
+              "draft_revision": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "draft_updated_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            }
+          },
+          "counts": {
+            "$ref": "#/components/schemas/SetupCounts"
+          },
+          "scheduled_changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompositionWindow"
+            }
+          },
+          "recent_changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupChangeEvent"
+            }
+          }
+        }
+      },
+      "CompositionSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "product_id",
+          "product_code",
+          "product_name",
+          "status",
+          "active_versions",
+          "leaf_count",
+          "effective_from",
+          "effective_to"
+        ],
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_code": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "active_versions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "leaf_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "effective_from": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "effective_to": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReconciliationCheck": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "status",
+          "details"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "WINDOW_OVERLAP",
+              "SHARED_RESOURCE",
+              "COMMITMENT_COVERAGE"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PASS",
+              "WARN",
+              "FAIL"
+            ]
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        }
+      },
+      "SetupReconciliation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "generated_at",
+          "counts",
+          "products",
+          "checks"
+        ],
+        "properties": {
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "resources",
+              "products",
+              "active_compositions",
+              "future_commitments"
+            ],
+            "properties": {
+              "resources": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "products": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "active_compositions": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "future_commitments": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompositionSummary"
+            }
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReconciliationCheck"
+            }
+          }
+        }
+      },
+      "CompositionStatus": {
+        "type": "string",
+        "enum": [
+          "DRAFT",
+          "ACTIVE",
+          "RETIRED"
+        ]
+      },
+      "Composition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "product_id",
+          "version_number",
+          "effective_from",
+          "effective_to",
+          "status",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version_number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "effective_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CompositionStatus"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "SetupPhysicalTemplateV2": {
+        "type": "string",
+        "enum": [
+          "ROOM",
+          "VILLA",
+          "APARTMENT",
+          "CABIN",
+          "TENT",
+          "HOUSE",
+          "SITE",
+          "DORM",
+          "SUITE_STANDALONE",
+          "SUITE_CONNECTED"
+        ],
+        "x-implementation-status": "IMPLEMENTED_LOCAL"
+      },
+      "SetupBookingModeV2": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "WHOLE_ONLY",
+          "PARTS_ONLY",
+          "WHOLE_AND_PARTS",
+          "BEDS_ONLY",
+          "BEDS_AND_PRIVATE",
+          "CONNECTED_UNITS",
+          null
+        ],
+        "x-implementation-status": "IMPLEMENTED_LOCAL"
+      },
+      "SetupLocationKindV2": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "ZONE",
+          "BUILDING",
+          "WING",
+          "FLOOR",
+          "CLUSTER",
+          "SERVICE_AREA",
+          null
+        ],
+        "x-implementation-status": "IMPLEMENTED_LOCAL"
+      },
+      "SetupLocationV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "client_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "existing_location_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parent_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "pattern": "^[A-Za-z0-9-]+$"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SetupLocationKindV2"
+          },
+          "display_order": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "required": [
+          "client_ref",
+          "code",
+          "name",
+          "kind",
+          "display_order"
+        ],
+        "x-implementation-status": "IMPLEMENTED_LOCAL"
+      },
+      "SetupUnitDetailsV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "bedrooms_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "bathrooms_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "x-implementation-status": "IMPLEMENTED_LOCAL"
+      },
+      "SetupExplicitUnitV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "unit_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "pattern": "^[A-Za-z0-9-]+$"
+          },
+          "display_label": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "unit_ref",
+          "code",
+          "display_label"
+        ],
+        "x-implementation-status": "IMPLEMENTED_LOCAL"
+      },
+      "SetupPartV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "part_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16,
+            "pattern": "^[A-Za-z0-9-]+$"
+          },
+          "display_label": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          },
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 100
+          },
+          "details": {
+            "$ref": "#/components/schemas/SetupUnitDetailsV2"
+          }
+        },
+        "required": [
+          "part_ref",
+          "code",
+          "display_label"
+        ],
+        "x-implementation-status": "IMPLEMENTED_LOCAL"
+      },
+      "SetupBedV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "bed_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16,
+            "pattern": "^[A-Za-z0-9-]+$"
+          },
+          "display_label": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "bed_ref",
+          "code",
+          "display_label"
+        ],
+        "x-implementation-status": "IMPLEMENTED_LOCAL"
+      },
+      "SetupUnitGroupV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "group_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "legacy_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64
+          },
+          "physical_template": {
+            "$ref": "#/components/schemas/SetupPhysicalTemplateV2"
+          },
+          "booking_mode": {
+            "$ref": "#/components/schemas/SetupBookingModeV2"
+          },
+          "selection_mode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "EXACT",
+              "CATEGORY",
+              null
+            ]
+          },
+          "location_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupExplicitUnitV2"
+            },
+            "maxItems": 2000
+          },
+          "pattern": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "exclusions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 16
+            },
+            "maxItems": 200
+          },
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 100
+          },
+          "details": {
+            "$ref": "#/components/schemas/SetupUnitDetailsV2"
+          },
+          "privacy_ack": {
+            "type": "boolean"
+          },
+          "sharing_scope": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "MIXED",
+              null
+            ]
+          },
+          "beds_per_unit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 50
+          },
+          "beds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupBedV2"
+            },
+            "maxItems": 50
+          },
+          "guaranteed_specs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "KING",
+                "TWIN"
+              ]
+            },
+            "maxItems": 2
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupPartV2"
+            },
+            "maxItems": 20
+          },
+          "connected_resource_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 20,
+            "uniqueItems": true
+          },
+          "connection_ack": {
+            "type": "boolean"
+          },
+          "effective_from": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "effective_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          }
+        },
+        "required": [
+          "group_ref",
+          "physical_template"
+        ],
+        "allOf": [
+          {
+            "not": {
+              "required": [
+                "units",
+                "pattern"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "beds",
+                "beds_per_unit"
+              ]
+            }
+          }
+        ],
+        "description": "Accepted for draft storage; not inventory execution. Missing choice/capacity is allowed in drafts, never a default. Cross-field matrix and readiness are service invariants. CATEGORY whole units only or beds within one room; parts/connected EXACT. Connected units require scoped existing IDs, connection_ack and effective dates. Bedrooms are descriptive, never inventory. No automatic migration of active whole units into parts.",
+        "x-implementation-status": "IMPLEMENTED_LOCAL"
+      },
+      "SetupDraftInputV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "enum": [
+              2
+            ]
+          },
+          "property": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 2,
+                "maxLength": 120
+              },
+              "code": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 20
+              },
+              "country": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 60
+              },
+              "timezone": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "Asia/Jakarta",
+                  "Asia/Makassar",
+                  "Asia/Jayapura",
+                  null
+                ]
+              },
+              "base_currency": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "IDR",
+                  "USD",
+                  null
+                ]
+              },
+              "types": {
+                "type": "array",
+                "maxItems": 8,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "ROOM",
+                    "CABIN",
+                    "TENT",
+                    "VILLA",
+                    "APARTMENT",
+                    "DORM",
+                    "SITE",
+                    "SUITE"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupLocationV2"
+            },
+            "maxItems": 200
+          },
+          "unit_groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupUnitGroupV2"
+            },
+            "maxItems": 20
+          },
+          "operations": {
+            "type": "object",
+            "properties": {
+              "check_in": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+              },
+              "check_out": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+              },
+              "inspection_required": {
+                "type": "boolean"
+              },
+              "explicit_states": {
+                "type": "boolean",
+                "description": "Must be true before apply; no bulk CLEAN assignment is inferred."
+              }
+            },
+            "additionalProperties": false
+          },
+          "pricing": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "postponed"
+            ],
+            "properties": {
+              "postponed": {
+                "type": "boolean"
+              },
+              "plan_name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 80
+              },
+              "sell_from": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "sell_to": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "base_price": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9]{1,14}(\\.[0-9]{1,6})?$"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "schema_version",
+          "property",
+          "locations",
+          "unit_groups",
+          "operations"
+        ],
+        "description": "Version 2 draft input, accepted for save/read/discard only. Execution, preview and readiness fail closed until PSR-04. PUT replaces the complete input; omitted and null remain distinct. No inventory is written by saving a draft.",
+        "x-implementation-status": "IMPLEMENTED_LOCAL"
+      },
+      "SetupIssueV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "field_path": {
+            "type": "string",
+            "maxLength": 240
+          },
+          "group_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        },
+        "required": [
+          "code",
+          "field_path"
+        ],
+        "x-implementation-status": "IMPLEMENTED_LOCAL"
+      },
+      "VersionedSetupDraftInput": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SetupDraftInput"
+          },
+          {
+            "$ref": "#/components/schemas/SetupDraftInputV2"
+          }
+        ],
+        "description": "v1 has no schema_version. v2 requires schema_version=2. Versions are preserved; no automatic upgrade or downgrade."
+      },
+      "SetupUnitAdditionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "x-implementation-status": "IMPLEMENTED_LOCAL",
+        "required": [
+          "schema_version",
+          "locations",
+          "unit_groups"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "enum": [
+              2
+            ]
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupLocationV2"
+            },
+            "maxItems": 200
+          },
+          "unit_groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupUnitGroupV2"
+            },
+            "maxItems": 20
+          }
+        },
+        "description": "PSR-04 additions to SETUP or ACTIVE property only. No edits to existing resources, property currency/timezone, operating policy, pricing or completed draft. New products follow existing activation/readiness gates."
+      },
+      "SetupUnitAdditionApplyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "x-implementation-status": "IMPLEMENTED_LOCAL",
+        "required": [
+          "input",
+          "preview_version"
+        ],
+        "properties": {
+          "input": {
+            "$ref": "#/components/schemas/SetupUnitAdditionInput"
+          },
+          "preview_version": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "SetupProductSimulation": {
+        "type": "object",
+        "required": [
+          "result",
+          "reason_codes",
+          "units",
+          "inventory_version",
+          "checked_at"
+        ],
+        "properties": {
+          "result": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "UNAVAILABLE",
+              "SPLIT_REQUIRED",
+              "UNDETERMINED"
+            ]
+          },
+          "reason_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "resources"
+              ],
+              "properties": {
+                "resources": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "code"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "inventory_version": {
+            "type": "integer"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SetupBatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "mode",
+          "completed",
+          "completed_batches",
+          "total_batches",
+          "total_units",
+          "created_units",
+          "preview_version",
+          "blockers",
+          "result"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "enum": [
+              "DRAFT",
+              "ADDITION"
+            ]
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "completed_batches": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "total_batches": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "total_units": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_units": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "preview_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupIssue"
+            }
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SetupApplyResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/tenants/{tenantId}/setup-templates": {
+      "get": {
+        "operationId": "ListSetupTemplates",
+        "summary": "List the server-owned unit template catalog",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template catalog and safe defaults",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SetupTemplate"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-draft": {
+      "get": {
+        "operationId": "GetSetupDraft",
+        "summary": "Read the stored setup draft for one property",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The draft or null when the property has no draft",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupDraftEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "put": {
+        "operationId": "SaveSetupDraft",
+        "summary": "Save the setup draft with revision and idempotency protection",
+        "x-permission": "property.manage",
+        "x-csrf": true,
+        "description": "Creates the draft when absent or replaces it when the If-Match revision is current. The same Idempotency-Key with the same payload replays the stored response; the same key with a different payload fails with IDEMPOTENCY_CONFLICT.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionedSetupDraftInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved draft with the next revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "draft"
+                  ],
+                  "properties": {
+                    "draft": {
+                      "$ref": "#/components/schemas/SetupDraft"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT when the same Idempotency-Key is reused with a different payload (details.reason = idempotency_key_reused)",
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "description": "SETUP_DRAFT_STALE when the If-Match revision is no longer current",
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "description": "SETUP_DRAFT_INVALID with per-field issues",
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "DiscardSetupDraft",
+        "summary": "Discard the draft without touching created inventory",
+        "x-permission": "property.manage",
+        "x-csrf": true,
+        "description": "Requires the current draft etag when a draft exists; a stale or missing If-Match fails with 412 and the draft remains. Deleting an already absent draft is an idempotent success with removed=false.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The draft was removed or was already absent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "removed"
+                  ],
+                  "properties": {
+                    "removed": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "SETUP_DRAFT_STALE when the If-Match generation or revision is no longer current",
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-draft/preview": {
+      "post": {
+        "operationId": "PreviewSetupApply",
+        "summary": "Expand the stored draft into a read-only creation preview",
+        "x-permission": "property.read",
+        "x-csrf": true,
+        "description": "Computes unit codes, per-template counts, duplicate and exclusion issues, and current blockers. Writes nothing and never creates a reservation. Reusing an existing villa, apartment or house code to change its whole/parts inventory shape fails with INVENTORY_TRANSFORMATION_REQUIRED (422).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preview bound to the current draft revision and inventory version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupDraftPreview"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SETUP_DRAFT_MISSING when the property has no stored draft",
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "description": "INVENTORY_TRANSFORMATION_REQUIRED when an existing villa, apartment or house would change between one whole resource and a container with sellable parts",
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-draft/apply": {
+      "post": {
+        "operationId": "ApplySetupDraft",
+        "summary": "Create units, products and compositions from a reviewed preview",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "description": "Re-validates permissions, property state (SETUP or ACTIVE), generation/revision, preview_version digest, limits and codes inside one transaction. An existing villa, apartment or house cannot be converted between one whole resource and parts through addition. A batch is bounded by the property limits profile; larger batches become resumable tasks with per-group results. No partial sellable inventory is left when a group fails. Idempotent replay with the same key returns the original successful result even if the draft changed afterwards; a first-time stale request fails closed.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "preview_version"
+                ],
+                "properties": {
+                  "preview_version": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Applied result with created counts and the next inventory version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/SetupApplyResult"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT for idempotency key reuse with different content or a concurrent apply (details.reason)",
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "description": "SETUP_DRAFT_STALE when the If-Match generation or revision is no longer current (details.current_etag), or PREVIEW_STALE when the presented preview_version digest no longer matches the current draft generation, revision, normalized input and inventory_version",
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "description": "SETUP_READINESS_BLOCKED when blocking gaps exist, SETUP_MODE_UNSUPPORTED when a rental mode is not implemented in this package, LIMIT_EXCEEDED when the property resource cap is exceeded, SETUP_BATCH_TASK_REQUIRED when the batch exceeds the inline apply limit, or INVENTORY_TRANSFORMATION_REQUIRED when a villa, apartment or house whole/parts conversion is attempted through addition",
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-conditional-permissions": {
+          "v2_compositions": "composition.manage",
+          "v2_pricing": "rate.manage",
+          "v2_property_core": "property.manage",
+          "v2_operations_policy": "task.manage"
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-readiness": {
+      "get": {
+        "operationId": "GetSetupReadiness",
+        "summary": "List setup gaps without changing the property state",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Readiness gaps for the setup screen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupReadiness"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-simulation": {
+      "get": {
+        "operationId": "SimulateSetupSale",
+        "summary": "Simulate whole, part or bed sale exclusivity using the applied structure",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "WHOLE",
+                "PART",
+                "BED"
+              ]
+            }
+          },
+          {
+            "name": "unit_code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Simulation result; no inventory is held",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupSimulationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-unit-imports": {
+      "post": {
+        "operationId": "ImportSetupUnits",
+        "summary": "Import unit rows with dry-run validation and optional apply",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "description": "CSV columns: code,template,capacity,location. Dry-run writes no resources but does store the idempotency record for replay, and reports preflight code conflicts and limit breaches. APPLY re-validates inside one transaction, honours the inline batch limit and the property resource cap, refuses existing unit codes, and creates the accepted rows atomically; rejected rows are excluded by design, so atomicity covers the accepted set, not the whole file. Repeated APPLY of the same file is stopped by the code-collision check; repeated requests replay through Idempotency-Key. Only implemented templates are accepted; DORM and SUITE are rejected until their package exists.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "mode",
+                  "file_name",
+                  "content"
+                ],
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "DRY_RUN",
+                      "APPLY"
+                    ]
+                  },
+                  "file_name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 262144
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-row import report; no partial creation on failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "mode",
+                    "file_hash",
+                    "applied",
+                    "totals",
+                    "rows"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "DRY_RUN",
+                        "APPLY"
+                      ]
+                    },
+                    "file_name": {
+                      "type": "string"
+                    },
+                    "file_hash": {
+                      "type": "string"
+                    },
+                    "applied": {
+                      "type": "boolean"
+                    },
+                    "preflight": {
+                      "type": "object",
+                      "required": [
+                        "code_conflicts",
+                        "inline_limit_exceeded",
+                        "resource_capacity_exceeded"
+                      ],
+                      "properties": {
+                        "code_conflicts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "inline_limit_exceeded": {
+                          "type": "boolean"
+                        },
+                        "resource_capacity_exceeded": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "required": [
+                        "rows",
+                        "accepted",
+                        "rejected",
+                        "created"
+                      ],
+                      "properties": {
+                        "rows": {
+                          "type": "integer"
+                        },
+                        "accepted": {
+                          "type": "integer"
+                        },
+                        "rejected": {
+                          "type": "integer"
+                        },
+                        "duplicates": {
+                          "type": "integer"
+                        },
+                        "created": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "rows": {
+                      "type": "array",
+                      "maxItems": 500,
+                      "items": {
+                        "$ref": "#/components/schemas/SetupUnitImportRow"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT when imported codes already exist as resources (details.codes)",
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "description": "SETUP_IMPORT_INVALID for unreadable files or no valid rows, SETUP_BATCH_TASK_REQUIRED above the inline limit, LIMIT_EXCEEDED above the resource cap, or CROSS_SCOPE_REFERENCE for unknown locations",
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-settings": {
+      "get": {
+        "operationId": "GetSetupSettings",
+        "summary": "Read the organized setup settings, scheduled changes and recent change log",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current setup state; no inventory write",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupSettings"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-changes": {
+      "get": {
+        "operationId": "ListSetupChanges",
+        "summary": "List property setup and composition change events with keyset pagination",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current setup state; no inventory write",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupChangeList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-reconciliation": {
+      "get": {
+        "operationId": "GetSetupReconciliation",
+        "summary": "Read setup invariants: active windows, shared resources and commitment coverage",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current setup state; no inventory write",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupReconciliation"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/compositions/{compositionId}/change-previews": {
+      "post": {
+        "operationId": "PreviewCompositionChange",
+        "summary": "Preview the dated composition change impact without writing",
+        "x-permission": "property.read",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/CompositionId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated result; blocked changes return an error and write nothing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompositionChangeImpact"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompositionChangeInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/compositions/{compositionId}/changes": {
+      "post": {
+        "operationId": "ApplyCompositionChange",
+        "summary": "Apply a dated composition change with a new immutable version",
+        "x-permission": "composition.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/CompositionId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated result; blocked changes return an error and write nothing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompositionChangeResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompositionChangeApplyInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-migration-previews": {
+      "post": {
+        "operationId": "PreviewSetupMigration",
+        "summary": "Preview migrating existing resources into a product composition without writing",
+        "x-permission": "property.read",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated result; blocked changes return an error and write nothing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MigrationPreview"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MigrationInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-migrations": {
+      "post": {
+        "operationId": "ApplySetupMigration",
+        "summary": "Migrate existing resources into a product composition in one isolated transaction",
+        "x-permission": "composition.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Validated result; blocked changes return an error and write nothing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MigrationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MigrationApplyInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-unit-additions/preview": {
+      "post": {
+        "operationId": "PreviewSetupUnitAddition",
+        "summary": "Preview an independent addition without reopening a completed draft",
+        "x-permission": "property.read",
+        "x-csrf": true,
+        "description": "Computes unit codes, per-template counts, duplicate and exclusion issues, and current blockers. Writes nothing and never creates a reservation.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preview bound to the current draft revision and inventory version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SetupDraftPreview"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "property_etag"
+                      ],
+                      "properties": {
+                        "property_etag": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SETUP_DRAFT_MISSING when the property has no stored draft",
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupUnitAdditionInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-unit-additions": {
+      "post": {
+        "operationId": "ApplySetupUnitAddition",
+        "summary": "Atomically add units without changing the completed draft or operating settings",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "description": "Re-validates permissions, property state (SETUP only), generation/revision, preview_version digest, limits and codes inside one transaction. A batch is bounded by the property limits profile; larger batches become resumable tasks with per-group results. No partial sellable inventory is left when a group fails. Idempotent replay with the same key returns the original successful result even if the draft changed afterwards; a first-time stale request fails closed.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Use the property_etag returned by the addition preview."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupUnitAdditionApplyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Applied result with created counts and the next inventory version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "result",
+                    "replayed"
+                  ],
+                  "properties": {
+                    "result": {
+                      "$ref": "#/components/schemas/SetupApplyResult"
+                    },
+                    "replayed": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT for idempotency key reuse with different content or a concurrent apply (details.reason)",
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "description": "SETUP_DRAFT_STALE when the If-Match generation or revision is no longer current (details.current_etag), or PREVIEW_STALE when the presented preview_version digest no longer matches the current draft generation, revision, normalized input and inventory_version",
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "description": "SETUP_READINESS_BLOCKED when blocking gaps exist, SETUP_MODE_UNSUPPORTED when a rental mode is not implemented in this package, LIMIT_EXCEEDED when the property resource cap is exceeded, SETUP_BATCH_TASK_REQUIRED when the batch exceeds the inline apply limit, or INVENTORY_TRANSFORMATION_REQUIRED for ADDITION mode whole/parts conversion",
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-conditional-permissions": {
+          "v2_compositions": "composition.manage",
+          "v2_pricing": "rate.manage",
+          "v2_property_core": "property.manage",
+          "v2_operations_policy": "task.manage"
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-product-simulation": {
+      "get": {
+        "operationId": "SimulateSetupProduct",
+        "summary": "Read-only inventory simulation using the reservation availability resolver; no price, guest-policy approval or hold",
+        "x-permission": "property.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "name": "product_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "adults",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "quantity",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability at the checked inventory version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupProductSimulation"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-batches": {
+      "get": {
+        "operationId": "GetSetupBatch",
+        "summary": "GetSetupBatch",
+        "x-permission": "property.read",
+        "description": "Locally implemented durable setup batches. Each step is atomic; completed steps remain after interruption. Browser-driven continuation, no background worker.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "in": "query",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current batch progress; GET returns null when no running batch exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "batch"
+                  ],
+                  "properties": {
+                    "batch": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/SetupBatch"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "replayed": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT for idempotency key reuse with different content or a concurrent apply (details.reason)",
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "description": "SETUP_DRAFT_STALE when the If-Match generation or revision is no longer current (details.current_etag), or PREVIEW_STALE when the presented preview_version digest no longer matches the current draft generation, revision, normalized input and inventory_version",
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "description": "SETUP_READINESS_BLOCKED when blocking gaps exist, SETUP_MODE_UNSUPPORTED when a rental mode is not implemented in this package, LIMIT_EXCEEDED when the property resource cap is exceeded, or SETUP_BATCH_TASK_REQUIRED when the batch exceeds the inline apply limit and no tested background task exists",
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "StartSetupBatch",
+        "summary": "StartSetupBatch",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "description": "Locally implemented durable setup batches. Each step is atomic; completed steps remain after interruption. Browser-driven continuation, no background worker.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Draft ETag for DRAFT; property_etag from addition preview for ADDITION."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "mode",
+                      "preview_version"
+                    ],
+                    "properties": {
+                      "mode": {
+                        "const": "DRAFT"
+                      },
+                      "preview_version": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "mode",
+                      "preview_version",
+                      "input"
+                    ],
+                    "properties": {
+                      "mode": {
+                        "const": "ADDITION"
+                      },
+                      "preview_version": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      },
+                      "input": {
+                        "$ref": "#/components/schemas/SetupUnitAdditionInput"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current batch progress; GET returns null when no running batch exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "batch"
+                  ],
+                  "properties": {
+                    "batch": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/SetupBatch"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "replayed": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT for idempotency key reuse with different content or a concurrent apply (details.reason)",
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "description": "SETUP_DRAFT_STALE when the If-Match generation or revision is no longer current (details.current_etag), or PREVIEW_STALE when the presented preview_version digest no longer matches the current draft generation, revision, normalized input and inventory_version",
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "description": "SETUP_READINESS_BLOCKED when blocking gaps exist, SETUP_MODE_UNSUPPORTED when a rental mode is not implemented in this package, LIMIT_EXCEEDED when the property resource cap is exceeded, or SETUP_BATCH_TASK_REQUIRED when the batch exceeds the inline apply limit and no tested background task exists, or INVENTORY_TRANSFORMATION_REQUIRED for an ADDITION request that changes an existing whole unit into parts or parts into a whole unit",
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-conditional-permissions": {
+          "v2_compositions": "composition.manage",
+          "v2_pricing": "rate.manage",
+          "v2_property_core": "property.manage",
+          "v2_operations_policy": "task.manage"
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/setup-batches/{batchId}/advance": {
+      "post": {
+        "operationId": "AdvanceSetupBatch",
+        "summary": "AdvanceSetupBatch",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "description": "Locally implemented durable setup batches. Each step is atomic; completed steps remain after interruption. Browser-driven continuation, no background worker.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "in": "path",
+            "required": true,
+            "name": "batchId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "index",
+                  "preview_version"
+                ],
+                "properties": {
+                  "index": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "preview_version": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current batch progress; GET returns null when no running batch exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "batch"
+                  ],
+                  "properties": {
+                    "batch": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/SetupBatch"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "replayed": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT for idempotency key reuse with different content or a concurrent apply (details.reason)",
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "description": "SETUP_DRAFT_STALE when the If-Match generation or revision is no longer current (details.current_etag), or PREVIEW_STALE when the presented preview_version digest no longer matches the current draft generation, revision, normalized input and inventory_version",
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "description": "SETUP_READINESS_BLOCKED when blocking gaps exist, SETUP_MODE_UNSUPPORTED when a rental mode is not implemented in this package, LIMIT_EXCEEDED when the property resource cap is exceeded, or SETUP_BATCH_TASK_REQUIRED when the batch exceeds the inline apply limit and no tested background task exists, or INVENTORY_TRANSFORMATION_REQUIRED for an ADDITION request that changes an existing whole unit into parts or parts into a whole unit",
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-conditional-permissions": {
+          "v2_compositions": "composition.manage",
+          "v2_pricing": "rate.manage",
+          "v2_property_core": "property.manage",
+          "v2_operations_policy": "task.manage"
+        }
+      }
+    }
+  },
+  "x-psr-v2": {
+    "status": "SETUP_EXECUTION_LOCAL",
+    "input_schema": "#/components/schemas/SetupDraftInputV2",
+    "runtime_accepts_v2": true,
+    "specification": "../execution/PSR-02-contract.md",
+    "future_permissions": {
+      "SaveSetupDraft": [
+        "property.manage"
+      ],
+      "ApplySetupDraft": {
+        "always": [
+          "property.resource.manage",
+          "property.manage"
+        ],
+        "when_compositions": [
+          "composition.manage"
+        ]
+      }
+    },
+    "invariants": [
+      "authorize-before-replay",
+      "tenant-property-scoped-reference-resolution",
+      "generation-and-revision-etag",
+      "completed-draft-read-only",
+      "no-silent-v1-upgrade",
+      "preview-includes-location-policy-and-limits",
+      "all-writes-in-one-property-locked-transaction"
+    ],
+    "planned_operations": [
+      {
+        "operationId": "PreviewSetupUnitAddition",
+        "method": "POST",
+        "path": "/tenants/{tenantId}/properties/{propertyId}/setup-unit-additions/preview",
+        "input": "SetupUnitAdditionInput",
+        "response": "SetupDraftPreview",
+        "permission": "property.read",
+        "csrf": true,
+        "writes": false,
+        "status": "IMPLEMENTED_LOCAL"
+      },
+      {
+        "operationId": "ApplySetupUnitAddition",
+        "method": "POST",
+        "path": "/tenants/{tenantId}/properties/{propertyId}/setup-unit-additions",
+        "input": "SetupUnitAdditionApplyInput",
+        "response": "SetupApplyResult",
+        "permission_all": [
+          "property.resource.manage",
+          "composition.manage when compositions are planned"
+        ],
+        "csrf": true,
+        "idempotency_key": "required",
+        "if_match": "required: property:<property UUID>:<property version>:<inventory version>",
+        "status": "IMPLEMENTED_LOCAL"
+      }
+    ],
+    "addition_invariants": [
+      "authorize-before-replay",
+      "SETUP-or-ACTIVE-only",
+      "completed-draft-untouched",
+      "lock-property-before-checking-fingerprint-and-writing",
+      "fingerprint-binds-scope-normalized-input-property-version-inventory-tree-policy-limits",
+      "no-implicit-pricing-or-room-readiness",
+      "all-or-nothing",
+      "PREVIEW_STALE-412",
+      "no-whole-parts-transformation"
+    ],
+    "limitations": [
+      "Property activation checks the stored v1 or v2 setup readiness and fails closed on blocking gaps, including drafts with a stale completed flag.",
+      "Only MIXED sharing is accepted.",
+      "Composition dates require both effective_from and effective_to.",
+      "Inline v2 budget includes resource, product, composition-leaf and new-location counts.",
+      "Browser-driven durable batches preserve completed steps; no background worker or global rollback.",
+      "Categories and compositions are indivisible; a group above the inline budget remains blocked."
+    ],
+    "batch_operations": {
+      "status": "IMPLEMENTED_LOCAL",
+      "operations": [
+        "GetSetupBatch",
+        "StartSetupBatch",
+        "AdvanceSetupBatch"
+      ],
+      "specification": "docs/execution/PSR-05-batches.md"
+    }
+  }
+}

@@ -1,0 +1,339 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL Phase 1 implemented operational endpoints",
+    "version": "0.7.0",
+    "description": "Local-only development API and worker probes. No tenant data, login, business routes, or live OTA integration. Ports shown are defaults; configured environment is authoritative."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:4100"
+    }
+  ],
+  "security": [],
+  "paths": {
+    "/api/v1/system/health": {
+      "get": {
+        "operationId": "ApiLiveness",
+        "summary": "ApiLiveness",
+        "responses": {
+          "200": {
+            "description": "Process check succeeded",
+            "headers": {
+              "X-Correlation-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Live"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Safe error, no credentials or stack traces",
+            "headers": {
+              "X-Correlation-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/ready": {
+      "get": {
+        "operationId": "ApiReadiness",
+        "summary": "ApiReadiness",
+        "responses": {
+          "200": {
+            "description": "Process check succeeded",
+            "headers": {
+              "X-Correlation-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Readiness"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE; details contains a Readiness report.",
+            "headers": {
+              "X-Correlation-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Safe error, no credentials or stack traces",
+            "headers": {
+              "X-Correlation-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "WorkerLiveness",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:4101"
+          }
+        ],
+        "summary": "WorkerLiveness",
+        "responses": {
+          "200": {
+            "description": "Process check succeeded",
+            "headers": {
+              "X-Correlation-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Live"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Safe error, no credentials or stack traces",
+            "headers": {
+              "X-Correlation-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "operationId": "WorkerReadiness",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:4101"
+          }
+        ],
+        "summary": "WorkerReadiness",
+        "responses": {
+          "200": {
+            "description": "Process check succeeded",
+            "headers": {
+              "X-Correlation-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Readiness"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE; details contains a Readiness report.",
+            "headers": {
+              "X-Correlation-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Safe error, no credentials or stack traces",
+            "headers": {
+              "X-Correlation-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Live": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "const": "alive"
+          },
+          "service": {
+            "enum": [
+              "api",
+              "worker"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "service"
+        ]
+      },
+      "Checks": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "database": {
+            "enum": [
+              "up",
+              "down"
+            ]
+          },
+          "redis": {
+            "enum": [
+              "up",
+              "down"
+            ]
+          },
+          "identity": {
+            "enum": [
+              "up",
+              "down"
+            ]
+          }
+        },
+        "required": [
+          "database",
+          "redis",
+          "identity"
+        ]
+      },
+      "Readiness": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": [
+              "ready",
+              "unavailable"
+            ]
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checks": {
+            "$ref": "#/components/schemas/Checks"
+          }
+        },
+        "required": [
+          "status",
+          "checked_at",
+          "checks"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "details": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "correlation_id",
+          "details"
+        ]
+      }
+    }
+  }
+}

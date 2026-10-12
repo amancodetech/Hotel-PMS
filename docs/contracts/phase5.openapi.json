@@ -1,0 +1,1608 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL PMS SAAS - Phase 5 implemented operations",
+    "version": "0.13.0",
+    "description": "Operations implemented in Phase 5 (rates, availability, inventory guarantee, exposure). Only implemented operations are listed. Missing operations from the planned v1 contract remain unimplemented."
+  },
+  "servers": [{ "url": "/api/v1" }],
+  "security": [{ "session": [] }],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "hotel_session"
+      }
+    },
+    "parameters": {
+      "TenantId": {
+        "name": "tenantId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "PropertyId": {
+        "name": "propertyId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "RatePlanId": {
+        "name": "ratePlanId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "ResourceId": {
+        "name": "resourceId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "Csrf": {
+        "name": "x-csrf-token",
+        "in": "header",
+        "required": true,
+        "schema": { "type": "string", "minLength": 32 }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Fixed error code, localized message key, correlation id and bounded details without secrets",
+        "headers": {
+          "X-Correlation-Id": { "schema": { "type": "string" } }
+        },
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message", "correlation_id", "details"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "message": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "correlation_id": { "type": "string", "format": "uuid" },
+          "details": { "type": "object" }
+        }
+      },
+      "Money": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["amount", "currency"],
+        "properties": {
+          "amount": {
+            "type": "string",
+            "pattern": "^[0-9]{1,18}(\\.[0-9]{1,6})?$"
+          },
+          "currency": { "type": "string", "enum": ["IDR", "USD"] }
+        }
+      },
+      "ReasonInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason"],
+        "properties": {
+          "reason": { "type": "string", "minLength": 1, "maxLength": 1000 }
+        }
+      },
+      "ExposurePreviewInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "connection_id",
+          "product_id",
+          "period",
+          "resource_ids",
+          "inventory_version"
+        ],
+        "properties": {
+          "connection_id": { "type": "string", "format": "uuid" },
+          "product_id": { "type": "string", "format": "uuid" },
+          "period": { "$ref": "#/components/schemas/Period" },
+          "resource_ids": {
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" },
+            "minItems": 1,
+            "maxItems": 32,
+            "uniqueItems": true
+          },
+          "inventory_version": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "ExposurePreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "preview_id",
+          "inventory_version",
+          "expires_at",
+          "allowed",
+          "reason_codes",
+          "preview_version"
+        ],
+        "properties": {
+          "preview_id": { "type": "string", "format": "uuid" },
+          "inventory_version": { "type": "integer", "minimum": 1 },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "allowed": { "type": "boolean" },
+          "reason_codes": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 80 },
+            "maxItems": 20
+          },
+          "preview_version": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "ExposurePublishInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["preview_id", "preview_version"],
+        "properties": {
+          "preview_id": { "type": "string", "format": "uuid" },
+          "preview_version": { "type": "integer", "minimum": 1 },
+          "approval_id": { "type": ["string", "null"], "format": "uuid" }
+        }
+      },
+      "Exposure": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "connection_id",
+          "product_id",
+          "start_date",
+          "end_date",
+          "mode",
+          "state",
+          "epoch",
+          "inventory_version",
+          "preview_version",
+          "cutoff",
+          "version",
+          "allocations"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "connection_id": { "type": "string", "format": "uuid" },
+          "product_id": { "type": "string", "format": "uuid" },
+          "start_date": { "type": "string", "format": "date" },
+          "end_date": { "type": "string", "format": "date" },
+          "mode": { "type": "string", "enum": ["WHOLE", "PARTS"] },
+          "state": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "RESERVED",
+              "PUBLISHING",
+              "ACTIVE",
+              "WITHDRAWING",
+              "RECONCILING",
+              "RELEASED",
+              "UNKNOWN"
+            ]
+          },
+          "epoch": { "type": "integer", "minimum": 1 },
+          "inventory_version": { "type": "integer", "minimum": 1 },
+          "preview_version": { "type": "integer", "minimum": 1 },
+          "cutoff": { "type": ["string", "null"], "format": "date-time" },
+          "version": { "type": "integer", "minimum": 1 },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "resource_id", "start_date", "end_date", "state"],
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "resource_id": { "type": "string", "format": "uuid" },
+                "start_date": { "type": "string", "format": "date" },
+                "end_date": { "type": "string", "format": "date" },
+                "state": { "type": "string", "enum": ["RESERVED", "RELEASED"] }
+              }
+            },
+            "maxItems": 100
+          }
+        }
+      },
+      "ExposureList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Exposure" },
+            "maxItems": 500
+          }
+        }
+      },
+      "ExposureOperationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["operation_id", "resource_id", "version", "state", "correlation_id"],
+        "properties": {
+          "operation_id": { "type": "string", "format": "uuid" },
+          "resource_id": { "type": "string", "format": "uuid" },
+          "version": { "type": "integer", "minimum": 1 },
+          "state": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "correlation_id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "SaleInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["action", "product_id", "period", "reason"],
+            "properties": {
+              "action": { "const": "STOP_SELL" },
+              "product_id": { "type": "string", "format": "uuid" },
+              "period": { "$ref": "#/components/schemas/Period" },
+              "reason": { "type": "string", "minLength": 1, "maxLength": 1000 },
+              "approval_id": { "type": ["string", "null"], "format": "uuid" }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["action", "restriction_id", "reason"],
+            "properties": {
+              "action": { "const": "OPEN" },
+              "restriction_id": { "type": "string", "format": "uuid" },
+              "reason": { "type": "string", "minLength": 1, "maxLength": 1000 },
+              "approval_id": { "type": ["string", "null"], "format": "uuid" }
+            }
+          }
+        ]
+      },
+      "SaleResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operation_id",
+          "resource_id",
+          "version",
+          "effective_open",
+          "reason_codes",
+          "sync_state"
+        ],
+        "properties": {
+          "operation_id": { "type": "string", "format": "uuid" },
+          "resource_id": { "type": "string", "format": "uuid" },
+          "version": { "type": "integer", "minimum": 1 },
+          "effective_open": { "type": "boolean" },
+          "reason_codes": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 80 },
+            "maxItems": 20
+          },
+          "sync_state": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "PROVIDER_ACCEPTED",
+              "CHANNEL_VERIFIED",
+              "PARTIAL",
+              "UNKNOWN",
+              "FAILED"
+            ]
+          }
+        }
+      },
+      "SyncStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "connection_id",
+          "desired_version",
+          "provider_accepted_version",
+          "channel_verified_version",
+          "state",
+          "observed_at",
+          "pending",
+          "failed",
+          "unknown",
+          "partial",
+          "attempts"
+        ],
+        "properties": {
+          "connection_id": { "type": "string", "format": "uuid" },
+          "desired_version": { "type": "integer", "minimum": 1 },
+          "provider_accepted_version": {
+            "type": ["integer", "null"],
+            "minimum": 1
+          },
+          "channel_verified_version": {
+            "type": ["integer", "null"],
+            "minimum": 1
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "PROVIDER_ACCEPTED",
+              "CHANNEL_VERIFIED",
+              "PARTIAL",
+              "UNKNOWN",
+              "FAILED"
+            ]
+          },
+          "observed_at": { "type": ["string", "null"], "format": "date-time" },
+          "pending": { "type": "integer", "minimum": 0 },
+          "failed": { "type": "integer", "minimum": 0 },
+          "unknown": { "type": "integer", "minimum": 0 },
+          "partial": { "type": "integer", "minimum": 0 },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "event_type",
+                "status",
+                "attempt_count",
+                "certainty",
+                "last_safe_error_code",
+                "updated_at"
+              ],
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "event_type": { "type": "string", "maxLength": 80 },
+                "status": { "type": "string", "maxLength": 40 },
+                "attempt_count": { "type": "integer", "minimum": 0 },
+                "certainty": { "type": ["string", "null"], "maxLength": 40 },
+                "last_safe_error_code": {
+                  "type": ["string", "null"],
+                  "maxLength": 80
+                },
+                "updated_at": { "type": "string", "format": "date-time" }
+              }
+            },
+            "maxItems": 50
+          }
+        }
+      },
+      "ReconcileResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["activated", "released", "reconciling"],
+        "properties": {
+          "activated": { "type": "integer", "minimum": 0 },
+          "released": { "type": "integer", "minimum": 0 },
+          "reconciling": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "RatePlan": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "code",
+          "name",
+          "product_id",
+          "currency",
+          "occupancy_basis",
+          "meal_plan",
+          "inclusions",
+          "cancellation_policy",
+          "free_policy",
+          "status",
+          "policy_version"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "version": { "type": "integer", "minimum": 1 },
+          "code": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "product_id": { "type": "string", "format": "uuid" },
+          "currency": { "type": "string", "enum": ["IDR", "USD"] },
+          "occupancy_basis": { "type": "integer", "minimum": 1, "maximum": 100 },
+          "meal_plan": { "type": "string", "enum": ["NONE", "BREAKFAST"] },
+          "inclusions": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 120 },
+            "maxItems": 20
+          },
+          "cancellation_policy": { "type": "object" },
+          "free_policy": { "type": "boolean" },
+          "status": {
+            "type": "string",
+            "enum": ["DRAFT", "ACTIVE", "SUSPENDED", "RETIRED"]
+          },
+          "policy_version": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "RatePlanInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "name", "product_id", "currency"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "product_id": { "type": "string", "format": "uuid" },
+          "currency": { "type": "string", "enum": ["IDR", "USD"] },
+          "occupancy_basis": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "meal_plan": { "type": "string", "enum": ["NONE", "BREAKFAST"] },
+          "inclusions": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 120 },
+            "maxItems": 20
+          },
+          "cancellation_policy": { "type": "object" },
+          "free_policy": { "type": "boolean" }
+        }
+      },
+      "RatePlanPatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version"],
+        "properties": {
+          "version": { "type": "integer", "minimum": 1 },
+          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "occupancy_basis": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "meal_plan": { "type": "string", "enum": ["NONE", "BREAKFAST"] },
+          "inclusions": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 120 },
+            "maxItems": 20
+          },
+          "cancellation_policy": { "type": "object" },
+          "free_policy": { "type": "boolean" },
+          "status": {
+            "type": "string",
+            "enum": ["DRAFT", "ACTIVE", "SUSPENDED", "RETIRED"]
+          }
+        }
+      },
+      "RatePlanList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RatePlan" },
+            "maxItems": 500
+          }
+        }
+      },
+      "RatePlanResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rate_plan"],
+        "properties": {
+          "rate_plan": { "$ref": "#/components/schemas/RatePlan" }
+        }
+      },
+      "RateBatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cells"],
+        "properties": {
+          "cells": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1000,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["rate_plan_id", "date", "occupancy", "money"],
+              "properties": {
+                "rate_plan_id": { "type": "string", "format": "uuid" },
+                "date": { "type": "string", "format": "date" },
+                "occupancy": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                },
+                "money": { "$ref": "#/components/schemas/Money" },
+                "tax_policy_version": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Accepted for forward compatibility; tax policies are owned by Phase 8 and ignored until then."
+                }
+              }
+            }
+          }
+        }
+      },
+      "RatesResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["updated", "inventory_version"],
+        "properties": {
+          "updated": { "type": "integer", "minimum": 0 },
+          "inventory_version": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "NightlyPrice": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "rate_plan_id",
+          "policy_version_id",
+          "date",
+          "occupancy",
+          "money"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "version": { "type": "integer", "minimum": 1 },
+          "rate_plan_id": { "type": "string", "format": "uuid" },
+          "policy_version_id": { "type": "string", "format": "uuid" },
+          "date": { "type": "string", "format": "date" },
+          "occupancy": { "type": "integer", "minimum": 1, "maximum": 100 },
+          "money": { "$ref": "#/components/schemas/Money" }
+        }
+      },
+      "RateCalendar": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["inventory_version", "plans", "prices"],
+        "properties": {
+          "inventory_version": { "type": "integer", "minimum": 1 },
+          "plans": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RatePlan" },
+            "maxItems": 500
+          },
+          "prices": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/NightlyPrice" },
+            "maxItems": 20000
+          }
+        }
+      },
+      "Period": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["arrival", "departure"],
+        "properties": {
+          "arrival": { "type": "string", "format": "date" },
+          "departure": { "type": "string", "format": "date" }
+        }
+      },
+      "Occupancy": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["adults", "child_ages"],
+        "properties": {
+          "adults": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "child_ages": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 0, "maximum": 17 },
+            "maxItems": 100
+          }
+        }
+      },
+      "SearchInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["product_ids", "period", "occupancy", "quantity"],
+        "properties": {
+          "product_ids": {
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "period": { "$ref": "#/components/schemas/Period" },
+          "occupancy": { "$ref": "#/components/schemas/Occupancy" },
+          "quantity": { "type": "integer", "minimum": 1, "maximum": 20 }
+        }
+      },
+      "SearchOffer": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["product_id", "result", "reason_codes"],
+        "properties": {
+          "product_id": { "type": "string", "format": "uuid" },
+          "result": {
+            "type": "string",
+            "enum": ["AVAILABLE", "UNAVAILABLE", "SPLIT_REQUIRED", "UNDETERMINED"]
+          },
+          "reason_codes": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1, "maxLength": 80 },
+            "maxItems": 20
+          }
+        }
+      },
+      "SearchResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["inventory_version", "offers", "guaranteed"],
+        "properties": {
+          "inventory_version": { "type": "integer", "minimum": 1 },
+          "offers": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SearchOffer" },
+            "maxItems": 100
+          },
+          "guaranteed": { "const": false }
+        }
+      },
+      "QuoteInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["product_id", "period", "occupancy", "quantity"],
+        "properties": {
+          "product_id": { "type": "string", "format": "uuid" },
+          "rate_plan_id": { "type": "string", "format": "uuid" },
+          "period": { "$ref": "#/components/schemas/Period" },
+          "occupancy": { "$ref": "#/components/schemas/Occupancy" },
+          "quantity": { "type": "integer", "minimum": 1, "maximum": 20 }
+        }
+      },
+      "PriceQuote": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "product_id",
+          "rate_plan_id",
+          "policy_version_id",
+          "currency",
+          "start_date",
+          "end_date",
+          "quantity",
+          "adults",
+          "child_ages",
+          "total_money",
+          "cells",
+          "inventory_version",
+          "expires_at"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "product_id": { "type": "string", "format": "uuid" },
+          "rate_plan_id": { "type": "string", "format": "uuid" },
+          "policy_version_id": { "type": "string", "format": "uuid" },
+          "currency": { "type": "string", "enum": ["IDR", "USD"] },
+          "start_date": { "type": "string", "format": "date" },
+          "end_date": { "type": "string", "format": "date" },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "adults": { "type": "integer", "minimum": 0 },
+          "child_ages": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 0, "maximum": 17 }
+          },
+          "total_money": { "$ref": "#/components/schemas/Money" },
+          "cells": { "type": "array", "items": { "type": "object" } },
+          "inventory_version": { "type": "integer", "minimum": 1 },
+          "expires_at": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "QuoteResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["quote"],
+        "properties": {
+          "quote": { "$ref": "#/components/schemas/PriceQuote" }
+        }
+      },
+      "HoldItemInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["product_id", "period", "occupancy", "quantity"],
+        "properties": {
+          "product_id": { "type": "string", "format": "uuid" },
+          "period": { "$ref": "#/components/schemas/Period" },
+          "occupancy": { "$ref": "#/components/schemas/Occupancy" },
+          "quantity": { "type": "integer", "minimum": 1, "maximum": 20 },
+          "price_snapshot_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          }
+        }
+      },
+      "HoldInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items", "inventory_version", "ttl_seconds"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/HoldItemInput" },
+            "minItems": 1,
+            "maxItems": 20
+          },
+          "inventory_version": { "type": "integer", "minimum": 1 },
+          "ttl_seconds": { "type": "integer", "minimum": 30, "maximum": 900 }
+        }
+      },
+      "Hold": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "source_kind",
+          "source_id",
+          "state",
+          "expires_at",
+          "inventory_version",
+          "version",
+          "allocations"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "source_kind": { "type": "string", "enum": ["HOLD", "ITEM", "GROUP"] },
+          "source_id": { "type": "string", "format": "uuid" },
+          "state": {
+            "type": "string",
+            "enum": ["ACTIVE", "RELEASED", "EXPIRED", "CONVERTED"]
+          },
+          "expires_at": { "type": ["string", "null"], "format": "date-time" },
+          "inventory_version": { "type": "integer", "minimum": 1 },
+          "version": { "type": "integer", "minimum": 1 },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "resource_id", "start_date", "end_date", "state"],
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "resource_id": { "type": "string", "format": "uuid" },
+                "start_date": { "type": "string", "format": "date" },
+                "end_date": { "type": "string", "format": "date" },
+                "state": { "type": "string", "enum": ["ACTIVE", "RELEASED"] }
+              }
+            },
+            "maxItems": 500
+          }
+        }
+      },
+      "HoldResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["hold"],
+        "properties": { "hold": { "$ref": "#/components/schemas/Hold" } }
+      },
+      "HoldList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Hold" },
+            "maxItems": 500
+          }
+        }
+      },
+      "BlockInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["resource_ids", "period", "reason", "mode"],
+        "properties": {
+          "resource_ids": {
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" },
+            "minItems": 1,
+            "maxItems": 100,
+            "uniqueItems": true
+          },
+          "period": { "$ref": "#/components/schemas/Period" },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "mode": { "type": "string", "enum": ["PLANNED", "EMERGENCY"] }
+        }
+      },
+      "Block": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "mode",
+          "reason",
+          "state",
+          "start_date",
+          "end_date",
+          "resource_ids",
+          "version"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "mode": { "type": "string", "enum": ["PLANNED", "EMERGENCY"] },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "state": { "type": "string", "enum": ["ACTIVE", "RELEASED"] },
+          "start_date": { "type": "string", "format": "date" },
+          "end_date": { "type": "string", "format": "date" },
+          "resource_ids": {
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" },
+            "maxItems": 100
+          },
+          "version": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "Disruption": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "block_id",
+          "allocation_id",
+          "resource_id",
+          "start_date",
+          "end_date",
+          "state",
+          "note"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "block_id": { "type": "string", "format": "uuid" },
+          "allocation_id": { "type": "string", "format": "uuid" },
+          "resource_id": { "type": "string", "format": "uuid" },
+          "start_date": { "type": "string", "format": "date" },
+          "end_date": { "type": "string", "format": "date" },
+          "state": { "type": "string", "enum": ["OPEN", "RESOLVED"] },
+          "note": { "type": ["string", "null"], "maxLength": 1000 }
+        }
+      },
+      "BlockResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["block", "disruptions"],
+        "properties": {
+          "block": { "$ref": "#/components/schemas/Block" },
+          "disruptions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Disruption" },
+            "maxItems": 100
+          }
+        }
+      },
+      "BlockList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items", "disruptions"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Block" },
+            "maxItems": 500
+          },
+          "disruptions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Disruption" },
+            "maxItems": 500
+          }
+        }
+      },
+      "MaintenanceInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version", "state", "reason"],
+        "properties": {
+          "version": { "type": "integer", "minimum": 1 },
+          "state": { "type": "string", "enum": ["NONE", "OOO", "OOS"] },
+          "reason": { "type": "string", "minLength": 3, "maxLength": 1000 }
+        }
+      },
+      "ResourceView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "code",
+          "type",
+          "capacity",
+          "state",
+          "housekeeping_state",
+          "maintenance_state"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "version": { "type": "integer", "minimum": 1 },
+          "code": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "type": { "type": "string" },
+          "capacity": { "type": "integer", "minimum": 1 },
+          "state": { "type": "string" },
+          "housekeeping_state": { "type": "string" },
+          "maintenance_state": { "type": "string" }
+        }
+      },
+      "ResourceResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["resource"],
+        "properties": {
+          "resource": { "$ref": "#/components/schemas/ResourceView" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/tenants/{tenantId}/properties/{propertyId}/rate-plans": {
+      "get": {
+        "operationId": "ListRatePlans",
+        "summary": "ListRatePlans",
+        "x-permission": "rate.manage",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rate plans in the property",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RatePlanList" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "operationId": "CreateRatePlan",
+        "summary": "CreateRatePlan",
+        "x-permission": "rate.manage",
+        "x-csrf": true,
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RatePlanInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rate plan created in DRAFT status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RatePlanResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/rate-plans/{ratePlanId}": {
+      "patch": {
+        "operationId": "UpdateRatePlan",
+        "summary": "UpdateRatePlan",
+        "x-permission": "rate.manage",
+        "x-csrf": true,
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          { "$ref": "#/components/parameters/RatePlanId" },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RatePlanPatch" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rate plan updated. Policy changes append an immutable policy version.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RatePlanResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/rates/batch": {
+      "post": {
+        "operationId": "SetRates",
+        "summary": "SetRates",
+        "x-permission": "rate.manage",
+        "x-csrf": true,
+        "description": "Atomic batch inside one property lock. Zero price requires the plan free policy. Fractional IDR is rejected later at exposure publish when the channel does not accept it; no silent rounding.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RateBatch" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "All cells applied or none; property inventory_version incremented once",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RatesResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/rates": {
+      "get": {
+        "operationId": "GetRateCalendar",
+        "summary": "GetRateCalendar",
+        "x-permission": "rate.manage",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active rate plans and their nightly prices in the requested range",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RateCalendar" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/availability/search": {
+      "post": {
+        "operationId": "SearchAvailability",
+        "summary": "SearchAvailability",
+        "x-permission": "reservation.read",
+        "x-csrf": true,
+        "description": "Advisory result computed under the property lock with a bounded search budget. AVAILABLE is not a guarantee; a hold revalidates under the same lock.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SearchInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Availability offers; UNDETERMINED means the search budget was exhausted without side effects",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SearchResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/quotes": {
+      "post": {
+        "operationId": "QuoteStay",
+        "summary": "QuoteStay",
+        "x-permission": "reservation.read",
+        "x-csrf": true,
+        "description": "Freezes nightly prices into an immutable quote snapshot used by holds.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QuoteInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Quote snapshot created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/QuoteResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/holds": {
+      "post": {
+        "operationId": "CreateHold",
+        "summary": "CreateHold",
+        "x-permission": "reservation.create",
+        "x-csrf": true,
+        "description": "Fixes resources and periods for every item under one property lock; all items or none. Expired holds are released before allocating, using database time.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/HoldInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Hold created with fixed allocations",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HoldResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "get": {
+        "operationId": "ListHolds",
+        "summary": "ListHolds",
+        "x-permission": "reservation.read",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active and expired holds with their allocations",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HoldList" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/holds/{holdId}/release": {
+      "post": {
+        "operationId": "ReleaseHold",
+        "summary": "ReleaseHold",
+        "x-permission": "reservation.create",
+        "x-csrf": true,
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          {
+            "name": "holdId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hold released and allocations freed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HoldResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/blocks": {
+      "post": {
+        "operationId": "CreateBlock",
+        "summary": "CreateBlock",
+        "x-permission": "inventory.block",
+        "x-csrf": true,
+        "description": "PLANNED blocks reject an overlap with an active commitment; EMERGENCY blocks keep the commitment and create a disruption, and additionally require maintenance.emergency.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BlockInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Block created; emergency blocks report the disruptions they opened",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BlockResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "get": {
+        "operationId": "ListBlocks",
+        "summary": "ListBlocks",
+        "x-permission": "property.read",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Blocks and disruptions in the property",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BlockList" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/blocks/{blockId}/release": {
+      "post": {
+        "operationId": "ReleaseBlock",
+        "summary": "ReleaseBlock",
+        "x-permission": "inventory.block",
+        "x-csrf": true,
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          {
+            "name": "blockId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReasonInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Block released",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BlockResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/resources/{resourceId}/maintenance": {
+      "post": {
+        "operationId": "SetResourceMaintenance",
+        "summary": "SetResourceMaintenance",
+        "x-permission": "property.resource.manage",
+        "x-csrf": true,
+        "description": "Standing OOO/OOS maintenance state; setting a non-NONE state additionally requires maintenance.emergency. Temporary windows remain represented by blocks.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          { "$ref": "#/components/parameters/ResourceId" },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MaintenanceInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Maintenance state updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResourceResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/exposures/preview": {
+      "post": {
+        "operationId": "PreviewExposure",
+        "summary": "PreviewExposure",
+        "x-permission": "channel.sale.manage",
+        "x-csrf": true,
+        "description": "Computes allowed and the reason codes under the property lock with a fresh inventory version; the preview expires and publishes exactly once.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ExposurePreviewInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preview result with preview_version bound to inventory_version",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExposurePreview" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/exposures": {
+      "post": {
+        "operationId": "PublishExposure",
+        "summary": "PublishExposure",
+        "x-permission": "channel.sale.manage",
+        "x-csrf": true,
+        "description": "Reserves the exposed resources immediately and queues absolute snapshots. Accepted for processing; not proof of provider completion.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ExposurePublishInput" }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Exposure queued and its resources protected immediately",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExposureOperationResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "get": {
+        "operationId": "ListExposures",
+        "summary": "ListExposures",
+        "x-permission": "channel.read",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          {
+            "name": "connectionId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exposures with their allocations",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExposureList" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/exposures/{exposureId}/withdraw": {
+      "post": {
+        "operationId": "WithdrawExposure",
+        "summary": "WithdrawExposure",
+        "x-permission": "channel.sale.manage",
+        "x-csrf": true,
+        "description": "Sends stop-sell first but does not release the protected resources until channel evidence is reconciled.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          {
+            "name": "exposureId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReasonInput" }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Withdrawal queued; resources remain protected",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExposureOperationResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections/{connectionId}/sale-status": {
+      "post": {
+        "operationId": "SetDistributionSaleStatus",
+        "summary": "SetDistributionSaleStatus",
+        "x-permission": "channel.sale.manage",
+        "x-csrf": true,
+        "description": "STOP_SELL inserts a named restriction; OPEN closes one restriction and reports the derived effective state, which stays closed while another reason, block, commitment or unresolved withdrawal remains.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          {
+            "name": "connectionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SaleInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Derived sale state after the change",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SaleResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections/{connectionId}/sync": {
+      "get": {
+        "operationId": "GetSyncStatus",
+        "summary": "GetSyncStatus",
+        "x-permission": "channel.read",
+        "description": "Separates queued, provider accepted, channel verified and unknown; HTTP acceptance is not channel verification.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          {
+            "name": "connectionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "attempts",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["true", "false"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Connection sync summary",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncStatus" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/connections/{connectionId}/reconcile": {
+      "post": {
+        "operationId": "ReconcileConnection",
+        "summary": "ReconcileConnection",
+        "x-permission": "channel.reconcile",
+        "x-csrf": true,
+        "description": "Advances publishing exposures to ACTIVE on provider acceptance while preserving allocations. Withdrawal release is BLOCKED_CAPABILITY (RELEASE_PROOF_NOT_IMPLEMENTED): transport acceptance and CHANNEL_VERIFIED alone do not prove reconciliation of booking revisions through a certified cutoff. Completed transport moves withdrawal to RECONCILING and retains allocations; released is always zero until an authorized complete proof mechanism is implemented.",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantId" },
+          { "$ref": "#/components/parameters/PropertyId" },
+          {
+            "name": "connectionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          { "$ref": "#/components/parameters/Csrf" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReasonInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reconciliation outcome",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReconcileResult" }
+              }
+            }
+          },
+          "default": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    }
+  }
+}

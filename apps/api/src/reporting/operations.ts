@@ -1,0 +1,73 @@
+import type { ImplementedOperation } from '../identity/operations.js';
+
+export const phase11Operations: ImplementedOperation[] = [
+  {
+    operationId: 'ReadReport',
+    method: 'POST',
+    path: '/api/v1/tenants/{tenantId}/properties/{propertyId}/reports/query',
+    access: 'permission',
+    permission: 'report.operational.view',
+    csrf: true,
+  },
+  {
+    operationId: 'ReadTenantReport',
+    method: 'POST',
+    path: '/api/v1/tenants/{tenantId}/reports/query',
+    access: 'permission',
+    permission: 'report.operational.view',
+    csrf: true,
+  },
+  {
+    operationId: 'ExportReport',
+    method: 'POST',
+    path: '/api/v1/tenants/{tenantId}/properties/{propertyId}/reports/exports',
+    access: 'permission',
+    permission: 'report.export',
+    csrf: true,
+  },
+  {
+    operationId: 'ExportTenantReport',
+    method: 'POST',
+    path: '/api/v1/tenants/{tenantId}/reports/exports',
+    access: 'permission',
+    permission: 'report.export',
+    csrf: true,
+  },
+  {
+    operationId: 'ListReportExports',
+    method: 'GET',
+    path: '/api/v1/tenants/{tenantId}/reports/exports',
+    access: 'permission',
+    permission: 'report.export',
+  },
+  {
+    operationId: 'DownloadReportExport',
+    method: 'GET',
+    path: '/api/v1/tenants/{tenantId}/reports/exports/{exportId}/download',
+    access: 'permission',
+    permission: 'report.export',
+  },
+  {
+    operationId: 'RevokeReportExport',
+    method: 'POST',
+    path: '/api/v1/tenants/{tenantId}/reports/exports/{exportId}/revocation',
+    access: 'permission',
+    permission: 'report.export',
+    csrf: true,
+  },
+  {
+    operationId: 'CaptureReportSnapshot',
+    method: 'POST',
+    path: '/api/v1/tenants/{tenantId}/properties/{propertyId}/reports/snapshots',
+    access: 'permission',
+    permission: 'report.operational.view',
+    csrf: true,
+  },
+  {
+    operationId: 'ListReportSnapshots',
+    method: 'GET',
+    path: '/api/v1/tenants/{tenantId}/properties/{propertyId}/reports/snapshots',
+    access: 'permission',
+    permission: 'report.operational.view',
+  },
+];

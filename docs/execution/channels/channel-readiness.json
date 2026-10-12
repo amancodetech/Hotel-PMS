@@ -1,0 +1,486 @@
+{
+  "registry_version": 1,
+  "updated_at": "2026-09-17",
+  "boundary": "Local preparation only. Every cell is NOT_TESTED/NOT_DECLARED until a real authorized connection produces dated evidence. A simulator, another channel or a provider 200 never fills a cell.",
+  "activation_requirements": [
+    "inbound_new",
+    "inbound_modified",
+    "inbound_cancelled",
+    "mapping",
+    "absolute_availability",
+    "rates",
+    "stop_sell_open",
+    "recovery",
+    "d20_exclusive_quota",
+    "d20_withdraw_evidence"
+  ],
+  "channels": [
+    {
+      "channel_key": "tiket-com",
+      "display_name": "tiket.com",
+      "provider_key": "channex",
+      "status": "NOT_TESTED",
+      "authorization_status": "NOT_AUTHORIZED",
+      "resources": {
+        "room": "NOT_DECLARED",
+        "villa_whole": "NOT_DECLARED",
+        "villa_parts": "BLOCKED",
+        "apartment": "NOT_DECLARED",
+        "bed": "NOT_DECLARED",
+        "site": "NOT_DECLARED",
+        "tent": "NOT_DECLARED",
+        "cabin": "NOT_DECLARED",
+        "house": "NOT_DECLARED",
+        "composite": "BLOCKED"
+      },
+      "permissions_required": [
+        "channel.read",
+        "channel.connection.manage",
+        "channel.mapping.manage",
+        "channel.sale.manage",
+        "channel.reconcile",
+        "channel.reprocess"
+      ],
+      "prices_and_terms": [
+        "IDR/USD من حساب المنشأة؛ لا تحويل تلقائي ولا نسخ سعر واحد عبر الإشغالات",
+        "عمولة/وجبات/إشغال تثبت لكل خطة قبل البيع"
+      ],
+      "mapping_focus": [
+        "طلب الاتصال عبر دعم tiket ثم اختبار Property وربط الغرف والخطط",
+        "اختبار modify/cancel/recovery وStop Sell فعلي قبل أي فتح"
+      ],
+      "required_evidence": [
+        "تفويض/عقد EX-01 وبيانات الحساب المصرح (secret_ref فقط)",
+        "إثبات PMS certification ونسخة Adapter",
+        "Mapping version مع أكواد الغرفة/الخطة/الإشغال/الوجبة",
+        "دليل AT-C01..10 لكل قدرة أساسية ودليل سحب D-20",
+        "استيراد/cutoff ومطابقة البداية ومالك الاستثناءات"
+      ],
+      "tests": {
+        "AT-C01": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C02": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C03": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C04": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C05": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C06": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C07": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C08": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C09": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C10": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        }
+      }
+    },
+    {
+      "channel_key": "booking-com",
+      "display_name": "Booking.com",
+      "provider_key": "channex",
+      "status": "NOT_TESTED",
+      "authorization_status": "NOT_AUTHORIZED",
+      "resources": {
+        "room": "NOT_DECLARED",
+        "villa_whole": "NOT_DECLARED",
+        "villa_parts": "BLOCKED",
+        "apartment": "NOT_DECLARED",
+        "bed": "NOT_DECLARED",
+        "site": "NOT_DECLARED",
+        "tent": "NOT_DECLARED",
+        "cabin": "NOT_DECLARED",
+        "house": "NOT_DECLARED",
+        "composite": "BLOCKED"
+      },
+      "permissions_required": [
+        "channel.read",
+        "channel.connection.manage",
+        "channel.mapping.manage",
+        "channel.sale.manage",
+        "channel.reconcile",
+        "channel.reprocess"
+      ],
+      "prices_and_terms": [
+        "دلالة عمولة القناة تبقى UNKNOWN حتى تأكيد الحساب؛ لا استنتاج صافي من الإجمالي",
+        "الخطط المشتقة تغطي كل إشغال مطلوب بلا نسخ صامت"
+      ],
+      "mapping_focus": [
+        "اختيار Channex في extranet وربط الخطط المشتقة والإشغال",
+        "استيراد حجوزات Booking المستقبلية لا يغيّر توفر Channex ويحتاج فحص تفاصيل ناقصة"
+      ],
+      "required_evidence": [
+        "تفويض/عقد EX-01 وبيانات الحساب المصرح",
+        "تغطية الخطة الأساسية والمشتقة في Mapping",
+        "استيراد الالتزامات قبل snapshot وتقرير الاكتمال",
+        "دليل AT-C01..10 ودليل سحب D-20",
+        "قائمة الاستثناءات الناقصة ومالكها"
+      ],
+      "tests": {
+        "AT-C01": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C02": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C03": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C04": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C05": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C06": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C07": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C08": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C09": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C10": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        }
+      }
+    },
+    {
+      "channel_key": "agoda",
+      "display_name": "Agoda",
+      "provider_key": "channex",
+      "status": "NOT_TESTED",
+      "authorization_status": "NOT_AUTHORIZED",
+      "resources": {
+        "room": "NOT_DECLARED",
+        "villa_whole": "NOT_DECLARED",
+        "villa_parts": "BLOCKED",
+        "apartment": "NOT_DECLARED",
+        "bed": "NOT_DECLARED",
+        "site": "NOT_DECLARED",
+        "tent": "NOT_DECLARED",
+        "cabin": "NOT_DECLARED",
+        "house": "NOT_DECLARED",
+        "composite": "BLOCKED"
+      },
+      "permissions_required": [
+        "channel.read",
+        "channel.connection.manage",
+        "channel.mapping.manage",
+        "channel.sale.manage",
+        "channel.reconcile",
+        "channel.reprocess"
+      ],
+      "prices_and_terms": [
+        "دلالة سعر الإشغال تُثبت لكل إشغال؛ لا نسخ سعر واحد",
+        "العملة/العمولة/الضرائب من الحساب الفعلي"
+      ],
+      "mapping_focus": [
+        "تفعيل channel manager في YCS واختيار Channex",
+        "Mapping متعدد الإشغال وIDs الحساب"
+      ],
+      "required_evidence": [
+        "تفويض/عقد EX-01 وبيانات الحساب المصرح",
+        "Mapping متعدد الإشغال مع IDs",
+        "دليل AT-C01..10 ودليل سحب D-20",
+        "فحص سعر/عملة/عمولة الحساب"
+      ],
+      "tests": {
+        "AT-C01": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C02": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C03": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C04": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C05": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C06": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C07": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C08": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C09": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C10": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        }
+      }
+    },
+    {
+      "channel_key": "traveloka",
+      "display_name": "Traveloka",
+      "provider_key": "channex",
+      "status": "NOT_TESTED",
+      "authorization_status": "NOT_AUTHORIZED",
+      "resources": {
+        "room": "NOT_DECLARED",
+        "villa_whole": "NOT_DECLARED",
+        "villa_parts": "BLOCKED",
+        "apartment": "NOT_DECLARED",
+        "bed": "NOT_DECLARED",
+        "site": "NOT_DECLARED",
+        "tent": "NOT_DECLARED",
+        "cabin": "NOT_DECLARED",
+        "house": "NOT_DECLARED",
+        "composite": "BLOCKED"
+      },
+      "permissions_required": [
+        "channel.read",
+        "channel.connection.manage",
+        "channel.mapping.manage",
+        "channel.sale.manage",
+        "channel.reconcile",
+        "channel.reprocess"
+      ],
+      "prices_and_terms": [
+        "عروض الوجبات لنفس المورد لا تضاعف الحصة",
+        "gross/net/commission وpartial ARI تفسر بلا افتراض"
+      ],
+      "mapping_focus": [
+        "Property connection ID قد يختلف عن المعرف العام",
+        "Mapping متعدد الإشغال والوجبات على مستوى room وRETAIL والخطط المشتقة"
+      ],
+      "required_evidence": [
+        "تفويض/عقد EX-01 وبيانات الحساب المصرح",
+        "Mapping متعدد الإشغال/الوجبات مع IDs الاتصال الفعلي",
+        "دليل AT-C01..10 ودليل سحب D-20",
+        "تفسير المال وحدود السعر وpartial ARI"
+      ],
+      "tests": {
+        "AT-C01": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C02": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C03": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C04": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C05": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C06": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C07": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C08": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C09": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C10": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        }
+      }
+    },
+    {
+      "channel_key": "trip-com",
+      "display_name": "Trip.com",
+      "provider_key": "channex",
+      "status": "NOT_TESTED",
+      "authorization_status": "NOT_AUTHORIZED",
+      "resources": {
+        "room": "NOT_DECLARED",
+        "villa_whole": "NOT_DECLARED",
+        "villa_parts": "BLOCKED",
+        "apartment": "NOT_DECLARED",
+        "bed": "NOT_DECLARED",
+        "site": "NOT_DECLARED",
+        "tent": "NOT_DECLARED",
+        "cabin": "NOT_DECLARED",
+        "house": "NOT_DECLARED",
+        "composite": "BLOCKED"
+      },
+      "permissions_required": [
+        "channel.read",
+        "channel.connection.manage",
+        "channel.mapping.manage",
+        "channel.sale.manage",
+        "channel.reconcile",
+        "channel.reprocess"
+      ],
+      "prices_and_terms": [
+        "العملة والسعر والقيود تثبت للحساب المقصود؛ لا افتراض من الاسم",
+        "تغطية القناة الفعلية جزء من دليل التفعيل"
+      ],
+      "mapping_focus": [
+        "مسار Ctrip/Trip.com وربط الغرف والخطط",
+        "هوية حساب Trip المقصود والتغطية الفعلية"
+      ],
+      "required_evidence": [
+        "تفويض/عقد EX-01 وبيانات الحساب المصرح",
+        "تأكيد هوية الحساب والتغطية الفعلية",
+        "دليل AT-C01..10 ودليل سحب D-20",
+        "فحص العملة/القيود/التواريخ"
+      ],
+      "tests": {
+        "AT-C01": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C02": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C03": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C04": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C05": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C06": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C07": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C08": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C09": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        },
+        "AT-C10": {
+          "status": "NOT_TESTED",
+          "evidence_ref": null,
+          "test_run_id": null
+        }
+      }
+    }
+  ]
+}

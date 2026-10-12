@@ -1,0 +1,2388 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL PMS SAAS - Phase 9 implemented operations",
+    "version": "0.28.0",
+    "description": "Operations implemented in Phase 9 packages P09-01..P09-03. P09-01: housekeeping tasks once per confirmed stay event with assignment/start/complete/inspection, facility inspection policy and long-stay interval, DND logging. P09-02: work orders with the Open..Closed lifecycle and documented reopening, OOO/OOS recomputed from open orders only, emergency blocks with disruptions independent from closure. P09-03: the operations board (tasks/DND/notifications snapshot), shift handover that records counts and an optional cashier-session reference without replacing the cashier ledger, and internal notifications that never leave the system."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "parameters": {
+      "TenantId": {
+        "name": "tenantId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PropertyId": {
+        "name": "propertyId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "TaskId": {
+        "name": "taskId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "DndId": {
+        "name": "dndId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Csrf": {
+        "name": "x-csrf-token",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 32
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128
+        }
+      },
+      "WorkOrderId": {
+        "name": "workOrderId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "NotificationId": {
+        "name": "notificationId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Fixed error code, localized message key, correlation id and bounded details without secrets",
+        "headers": {
+          "X-Correlation-Id": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "correlation_id"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "TaskInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "description"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "HOUSEKEEPING",
+              "GUEST_REQUEST",
+              "MAINTENANCE"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assignee_membership_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "TaskCommandInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "AssignTaskInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "membership_id",
+          "version"
+        ],
+        "properties": {
+          "membership_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "DndInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id",
+          "note"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "follow_up_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FollowUpDndInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "note"
+        ],
+        "properties": {
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "OperationsPolicyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "inspection_required"
+        ],
+        "properties": {
+          "inspection_required": {
+            "type": "boolean"
+          },
+          "long_stay_clean_interval_days": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 365
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "TaskView": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "status",
+          "priority",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "HOUSEKEEPING",
+              "GUEST_REQUEST"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ASSIGNED",
+              "IN_PROGRESS",
+              "CLEAN",
+              "INSPECTED",
+              "CANCELLED"
+            ]
+          },
+          "resource_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "reservation_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "due_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "policy_version": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "assignee_membership_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "source_event_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "source_event_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "clean_started_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "clean_completed_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "inspected_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "inspected_by_membership_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "resource_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resource_display_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resource_location_path": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "TaskList": {
+        "type": "object",
+        "required": [
+          "tasks"
+        ],
+        "properties": {
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskView"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "TaskResult": {
+        "type": "object",
+        "required": [
+          "task",
+          "replayed"
+        ],
+        "properties": {
+          "task": {
+            "$ref": "#/components/schemas/TaskView"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DndView": {
+        "type": "object",
+        "required": [
+          "id",
+          "resource_id",
+          "state",
+          "note"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "FOLLOWED_UP"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "follow_up_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "follow_up_note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "follow_up_attempt_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        }
+      },
+      "DndList": {
+        "type": "object",
+        "required": [
+          "dnd_logs"
+        ],
+        "properties": {
+          "dnd_logs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DndView"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "DndResult": {
+        "type": "object",
+        "required": [
+          "dnd",
+          "replayed"
+        ],
+        "properties": {
+          "dnd": {
+            "$ref": "#/components/schemas/DndView"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OperationsPolicyView": {
+        "type": "object",
+        "required": [
+          "configured",
+          "inspection_required",
+          "long_stay_clean_interval_days",
+          "version"
+        ],
+        "properties": {
+          "configured": {
+            "type": "boolean"
+          },
+          "inspection_required": {
+            "type": "boolean"
+          },
+          "long_stay_clean_interval_days": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "version": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      },
+      "OperationsPolicyResult": {
+        "type": "object",
+        "required": [
+          "policy"
+        ],
+        "properties": {
+          "policy": {
+            "$ref": "#/components/schemas/OperationsPolicyView"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AssignWorkOrderInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "membership_id",
+          "version"
+        ],
+        "properties": {
+          "membership_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "WorkOrderInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id",
+          "category",
+          "severity",
+          "impact",
+          "description"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "GENERAL",
+              "PLUMBING",
+              "ELECTRICAL",
+              "HVAC",
+              "SAFETY",
+              "OTHER"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ]
+          },
+          "impact": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "OOS",
+              "OOO"
+            ]
+          },
+          "emergency": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "period": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "arrival",
+              "departure"
+            ],
+            "properties": {
+              "arrival": {
+                "type": "string",
+                "format": "date"
+              },
+              "departure": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          },
+          "assignee_membership_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "WorkOrderTransitionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "version"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "TRIAGED",
+              "IN_PROGRESS",
+              "RESOLVED",
+              "VERIFIED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "WorkOrderCloseInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "WorkOrderReopenInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason",
+          "version"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "WorkOrderView": {
+        "type": "object",
+        "required": [
+          "id",
+          "resource_id",
+          "impact",
+          "emergency",
+          "status",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "category": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "OOS",
+              "OOO"
+            ]
+          },
+          "emergency": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "period_start": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "period_end": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "block_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "assignee_membership_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "resolution_note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verified_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verified_by_membership_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "closed_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reopen_count": {
+            "type": "integer"
+          },
+          "last_reopen_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "resource_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resource_display_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resource_location_path": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "WorkOrderList": {
+        "type": "object",
+        "required": [
+          "work_orders"
+        ],
+        "properties": {
+          "work_orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkOrderView"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "WorkOrderResult": {
+        "type": "object",
+        "required": [
+          "work_order",
+          "replayed"
+        ],
+        "properties": {
+          "work_order": {
+            "$ref": "#/components/schemas/WorkOrderView"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ShiftHandoverInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "shift_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "to_membership_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "follow_up_membership_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cashier_session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "exceptions_text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "ShiftHandoverView": {
+        "type": "object",
+        "required": [
+          "id",
+          "shift_date",
+          "open_tasks",
+          "open_work_orders",
+          "active_dnd",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "shift_date": {
+            "type": "string"
+          },
+          "from_membership_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "to_membership_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "follow_up_membership_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "open_tasks": {
+            "type": "integer"
+          },
+          "open_work_orders": {
+            "type": "integer"
+          },
+          "active_dnd": {
+            "type": "integer"
+          },
+          "cashier_session_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "cashier_currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cashier_expected_amount": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cashier_counted_amount": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cashier_variance": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exceptions_text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_by_membership_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string"
+          }
+        }
+      },
+      "NotificationView": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "severity",
+          "title",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "WORK_ORDER_EMERGENCY",
+              "TASK_READY_FOR_INSPECTION",
+              "SHIFT_HANDOVER"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "INFO",
+              "WARNING",
+              "CRITICAL"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resource_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resource_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recipient_membership_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "read_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string"
+          }
+        }
+      },
+      "OperationsBoard": {
+        "type": "object",
+        "required": [
+          "date",
+          "timezone",
+          "buckets",
+          "tasks",
+          "dnd_logs",
+          "notifications",
+          "unread_notifications"
+        ],
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "inspection_required": {
+            "type": "boolean"
+          },
+          "buckets": {
+            "type": "object",
+            "required": [
+              "pending",
+              "assigned",
+              "in_progress",
+              "awaiting_inspection",
+              "ready"
+            ],
+            "properties": {
+              "pending": {
+                "type": "integer"
+              },
+              "assigned": {
+                "type": "integer"
+              },
+              "in_progress": {
+                "type": "integer"
+              },
+              "awaiting_inspection": {
+                "type": "integer"
+              },
+              "ready": {
+                "type": "integer"
+              }
+            }
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskView"
+            }
+          },
+          "dnd_logs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DndView"
+            }
+          },
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationView"
+            }
+          },
+          "unread_notifications": {
+            "type": "integer"
+          }
+        }
+      },
+      "ShiftHandoverList": {
+        "type": "object",
+        "required": [
+          "handovers"
+        ],
+        "properties": {
+          "handovers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShiftHandoverView"
+            }
+          }
+        }
+      },
+      "NotificationList": {
+        "type": "object",
+        "required": [
+          "notifications",
+          "unread"
+        ],
+        "properties": {
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationView"
+            }
+          },
+          "unread": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/tenants/{tenantId}/properties/{propertyId}/tasks": {
+      "get": {
+        "operationId": "ListTasks",
+        "summary": "ListTasks",
+        "x-permission": "task.read",
+        "description": "Task board data for one property; task views never include guest identity or money.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ASSIGNED",
+                "IN_PROGRESS",
+                "CLEAN",
+                "INSPECTED",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "assignee_membership_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "resource_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped task list ordered by creation with a safe cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateTask",
+        "summary": "CreateTask",
+        "x-permission": "task.manage",
+        "x-csrf": true,
+        "description": "Housekeeping tasks tied to a reservation item follow the versioned facility long-stay schedule; repeat inside the interval is rejected. MAINTENANCE tasks are created through work orders (P09-02).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/tasks/{taskId}/assign": {
+      "post": {
+        "operationId": "AssignTask",
+        "summary": "AssignTask",
+        "x-permission": "task.manage",
+        "x-csrf": true,
+        "description": "Assign or reassign an active task; reassignment during IN_PROGRESS keeps the task visible and the resource CLEANING.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/TaskId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignTaskInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assigned task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/tasks/{taskId}/start": {
+      "post": {
+        "operationId": "StartTask",
+        "summary": "StartTask",
+        "x-permission": "task.complete",
+        "x-csrf": true,
+        "description": "The assigned member starts cleaning; the room moves to CLEANING and readiness is not granted.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/TaskId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCommandInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Started task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/tasks/{taskId}/complete": {
+      "post": {
+        "operationId": "CompleteTask",
+        "summary": "CompleteTask",
+        "x-permission": "task.complete",
+        "x-csrf": true,
+        "description": "The assigned member reports cleaning done; the room becomes CLEAN. When the facility policy requires inspection, CLEAN alone does not make the room deliverable.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/TaskId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCommandInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cleaned task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/tasks/{taskId}/inspect": {
+      "post": {
+        "operationId": "InspectTask",
+        "summary": "InspectTask",
+        "x-permission": "task.inspect",
+        "x-csrf": true,
+        "description": "Supervisor inspection from CLEAN to INSPECTED; self-inspection is denied when the facility policy requires inspection.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/TaskId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCommandInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inspected task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/dnd-logs": {
+      "get": {
+        "operationId": "ListDndLogs",
+        "summary": "ListDndLogs",
+        "x-permission": "task.read",
+        "description": "DND/service-refusal log for one property; logging never flips housekeeping state.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "name": "resource_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "FOLLOWED_UP"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped DND log list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DndList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "LogDnd",
+        "summary": "LogDnd",
+        "x-permission": "task.manage",
+        "x-csrf": true,
+        "description": "Records a DND/service refusal with time and optional follow-up; housekeeping state is untouched.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DndInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Recorded DND entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DndResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/dnd-logs/{dndId}/follow-up": {
+      "post": {
+        "operationId": "FollowUpDnd",
+        "summary": "FollowUpDnd",
+        "x-permission": "task.complete",
+        "x-csrf": true,
+        "description": "Records the follow-up attempt on an ACTIVE DND entry once.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/DndId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowUpDndInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Followed-up DND entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DndResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/operations-policy": {
+      "get": {
+        "operationId": "GetOperationsPolicy",
+        "summary": "GetOperationsPolicy",
+        "x-permission": "task.read",
+        "description": "Facility operations policy: inspection requirement and long-stay cleaning interval with its version.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configured policy or unconfigured defaults",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsPolicyResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "put": {
+        "operationId": "SetOperationsPolicy",
+        "summary": "SetOperationsPolicy",
+        "x-permission": "task.manage",
+        "x-csrf": true,
+        "description": "Creates or updates the versioned facility policy; updates require the current version.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationsPolicyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsPolicyResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/work-orders": {
+      "get": {
+        "operationId": "ListWorkOrders",
+        "summary": "ListWorkOrders",
+        "x-permission": "maintenance.read",
+        "description": "Work orders for one property with their resource impact and lifecycle state.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OPEN",
+                "TRIAGED",
+                "ASSIGNED",
+                "IN_PROGRESS",
+                "RESOLVED",
+                "VERIFIED",
+                "CLOSED"
+              ]
+            }
+          },
+          {
+            "name": "resource_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "assignee_membership_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped work-order list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateWorkOrder",
+        "summary": "CreateWorkOrder",
+        "x-permission": "maintenance.manage",
+        "x-csrf": true,
+        "description": "Opens a work order. Impact OOO/OOS blocks delivery through maintenance state; emergency requires an OOO impact, a period and maintenance.emergency, and creates an emergency block with disruption records without touching any reservation.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkOrderInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created work order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/work-orders/{workOrderId}/assign": {
+      "post": {
+        "operationId": "AssignWorkOrder",
+        "summary": "AssignWorkOrder",
+        "x-permission": "maintenance.manage",
+        "x-csrf": true,
+        "description": "Assigns or reassigns an open work order to an active member; reassignment during IN_PROGRESS keeps the current state.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkOrderId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignWorkOrderInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assigned work order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/work-orders/{workOrderId}/transitions": {
+      "post": {
+        "operationId": "TransitionWorkOrder",
+        "summary": "TransitionWorkOrder",
+        "x-permission": "maintenance.manage",
+        "x-csrf": true,
+        "description": "Moves the work order along Open to Verified with a resolution note required at RESOLVED; CLOSED has its own operation.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkOrderId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkOrderTransitionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transitioned work order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/work-orders/{workOrderId}/close": {
+      "post": {
+        "operationId": "CloseWorkOrder",
+        "summary": "CloseWorkOrder",
+        "x-permission": "maintenance.manage",
+        "x-csrf": true,
+        "description": "Closes a verified work order; maintenance state is recomputed from the remaining open orders only and any independent block stays ACTIVE.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkOrderId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkOrderCloseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Closed work order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/work-orders/{workOrderId}/reopen": {
+      "post": {
+        "operationId": "ReopenWorkOrder",
+        "summary": "ReopenWorkOrder",
+        "x-permission": "maintenance.manage",
+        "x-csrf": true,
+        "description": "Reopens a closed work order with a documented reason; the impact applies again but never overrides a newer open reason.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkOrderId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkOrderReopenInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reopened work order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/operations/board": {
+      "get": {
+        "operationId": "GetOperationsBoard",
+        "summary": "GetOperationsBoard",
+        "x-permission": "task.read",
+        "description": "Task/DND/notification snapshot for the current property business date; task views never include guest identity or money.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operations board snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsBoard"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/shift-handovers": {
+      "get": {
+        "operationId": "ListShiftHandovers",
+        "summary": "ListShiftHandovers",
+        "x-permission": "task.read",
+        "description": "Latest shift handovers with their recorded counts and cashier-session reference.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shift handover list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShiftHandoverList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "CreateShiftHandover",
+        "summary": "CreateShiftHandover",
+        "x-permission": "task.manage",
+        "x-csrf": true,
+        "description": "Records open tasks/work orders/DND counts and an optional cashier-session snapshot; it is an operational log and never replaces the cashier ledger.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShiftHandoverInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Recorded shift handover",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "handover",
+                    "replayed"
+                  ],
+                  "properties": {
+                    "handover": {
+                      "$ref": "#/components/schemas/ShiftHandoverView"
+                    },
+                    "replayed": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/notifications": {
+      "get": {
+        "operationId": "ListNotifications",
+        "summary": "ListNotifications",
+        "x-permission": "task.read",
+        "description": "Internal operations notifications visible to the actor (property-wide or addressed) with per-member read receipts; nothing is sent to any external adapter.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/notifications/{notificationId}/read": {
+      "post": {
+        "operationId": "MarkNotificationRead",
+        "summary": "MarkNotificationRead",
+        "x-permission": "task.read",
+        "x-csrf": true,
+        "description": "Records the actor read receipt; a notification addressed to another member stays out of reach.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/NotificationId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Read receipt recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "read",
+                    "newly_read"
+                  ],
+                  "properties": {
+                    "read": {
+                      "type": "boolean"
+                    },
+                    "newly_read": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1896 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL PMS SAAS - Phase 7 implemented operations",
+    "version": "0.19.0",
+    "description": "Operations implemented in Phase 7 packages P07-01, P07-02 and P07-03 (front desk board, room assignment, check-in, move, extend, split, early departure, partial departure and operational check-out), plus the F7 read-only channel exception list. Check-out is operational only; financial clearance, settlement and money stay in P08."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "hotel_session"
+      }
+    },
+    "parameters": {
+      "TenantId": {
+        "name": "tenantId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PropertyId": {
+        "name": "propertyId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ReservationId": {
+        "name": "reservationId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ItemId": {
+        "name": "itemId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Date": {
+        "name": "date",
+        "in": "query",
+        "required": false,
+        "description": "Optional business date in the property timezone; defaults to the current local date",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "Csrf": {
+        "name": "x-csrf-token",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 32
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Fixed error code, localized message key, correlation id and bounded details without secrets",
+        "headers": {
+          "X-Correlation-Id": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "correlation_id"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "ChannelException": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "state",
+          "connection_id",
+          "inbox_revision_id",
+          "outbox_id",
+          "owner",
+          "resolution",
+          "details_safe",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "IN_PROGRESS"
+            ]
+          },
+          "connection_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "inbox_revision_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "outbox_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "owner": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resolution": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "details_safe": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChannelExceptionList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChannelException"
+            }
+          }
+        }
+      },
+      "BoardAssignment": {
+        "type": "object",
+        "required": [
+          "id",
+          "item_id",
+          "resource_id",
+          "state",
+          "start_date",
+          "end_date",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "segment_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PLANNED",
+              "ACTIVE",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "checked_in_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "BoardRoomRef": {
+        "type": "object",
+        "required": [
+          "resource_id",
+          "code",
+          "state",
+          "housekeeping_state",
+          "maintenance_state",
+          "version",
+          "resource_type",
+          "parent_code"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "resource_type": {
+            "type": "string"
+          },
+          "parent_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "type": "string"
+          },
+          "housekeeping_state": {
+            "type": "string",
+            "enum": [
+              "CLEAN",
+              "DIRTY",
+              "CLEANING",
+              "INSPECTED"
+            ]
+          },
+          "maintenance_state": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "OOO",
+              "OOS"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "display_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "location_path": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parent_display_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "BoardCandidate": {
+        "type": "object",
+        "required": [
+          "resource_id",
+          "code",
+          "housekeeping_state",
+          "maintenance_state",
+          "eligible",
+          "reason",
+          "resource_type",
+          "parent_code"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "resource_type": {
+            "type": "string"
+          },
+          "parent_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "housekeeping_state": {
+            "type": "string"
+          },
+          "maintenance_state": {
+            "type": "string"
+          },
+          "eligible": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "display_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "location_path": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parent_display_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "BoardRoom": {
+        "type": "object",
+        "required": [
+          "resource_id",
+          "code",
+          "state",
+          "housekeeping_state",
+          "maintenance_state",
+          "version",
+          "assignment",
+          "resource_type",
+          "parent_code"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "resource_type": {
+            "type": "string"
+          },
+          "parent_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "type": "string"
+          },
+          "housekeeping_state": {
+            "type": "string"
+          },
+          "maintenance_state": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "assignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "display_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "location_path": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parent_display_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "BoardStay": {
+        "type": "object",
+        "required": [
+          "item_id",
+          "reservation_id",
+          "reservation_version",
+          "item_version",
+          "product_id",
+          "state",
+          "arrival",
+          "departure",
+          "adults",
+          "quantity",
+          "commitment_id",
+          "segment_id",
+          "segment_state",
+          "assignment",
+          "room",
+          "assignments",
+          "rooms",
+          "allocated_rooms",
+          "group_assignment",
+          "candidates",
+          "product_kind",
+          "capabilities",
+          "allocation_readiness"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reservation_version": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "item_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "product_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "product_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "type": "string"
+          },
+          "arrival": {
+            "type": "string",
+            "format": "date"
+          },
+          "departure": {
+            "type": "string",
+            "format": "date"
+          },
+          "adults": {
+            "type": "integer"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "commitment_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "segment_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "segment_state": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "room": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardRoomRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardAssignment"
+            },
+            "description": "All current operational room assignments for the stay"
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardRoomRef"
+            },
+            "description": "Rooms associated with the current operational assignments"
+          },
+          "allocated_rooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardRoomRef"
+            },
+            "description": "Rooms reserved by the active inventory commitment"
+          },
+          "group_assignment": {
+            "type": "boolean",
+            "description": "True when the product reserves and operates multiple rooms as one stay"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/StayCapabilities"
+          },
+          "allocation_readiness": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllocationReadiness"
+            }
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardCandidate"
+            },
+            "description": "Populated for arrivals only; other rows return an empty array"
+          }
+        }
+      },
+      "BoardResult": {
+        "type": "object",
+        "required": [
+          "date",
+          "timezone",
+          "arrivals",
+          "departures",
+          "inHouse",
+          "rooms"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Property timezone used to resolve the board business date"
+          },
+          "arrivals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardStay"
+            }
+          },
+          "departures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardStay"
+            }
+          },
+          "inHouse": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardStay"
+            }
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardRoom"
+            }
+          }
+        }
+      },
+      "AssignRoomInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id",
+          "version"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "AssignRoomResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "item_id",
+          "item_version",
+          "assignment",
+          "replayed"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "assignment": {
+            "$ref": "#/components/schemas/BoardAssignment"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CheckInInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "CheckInResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "item_id",
+          "state",
+          "item_version",
+          "reservation_version",
+          "segment_id",
+          "assignment",
+          "assignments",
+          "replayed"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "item_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "reservation_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "segment_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "assignment": {
+            "$ref": "#/components/schemas/BoardAssignment"
+          },
+          "assignments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardAssignment"
+            },
+            "description": "All room assignments activated by this check-in"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MoveStayInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "to_resource_id",
+          "effective_date",
+          "version"
+        ],
+        "properties": {
+          "to_resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "effective_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "MoveStayResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "item_id",
+          "state",
+          "item_version",
+          "segment_id",
+          "previous_assignment_id",
+          "assignment",
+          "replayed"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "item_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "segment_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "previous_assignment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assignment": {
+            "$ref": "#/components/schemas/BoardAssignment"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ExtendStayInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "new_departure",
+          "version"
+        ],
+        "properties": {
+          "new_departure": {
+            "type": "string",
+            "format": "date"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "ExtendStayResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "item_id",
+          "state",
+          "item_version",
+          "departure",
+          "assignment",
+          "inventory_version",
+          "replayed"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "item_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "departure": {
+            "type": "string",
+            "format": "date"
+          },
+          "assignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "inventory_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SplitStayInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "at_date",
+          "version"
+        ],
+        "properties": {
+          "at_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "SplitStayResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "item_id",
+          "state",
+          "item_version",
+          "follow_up_item_id",
+          "follow_up_item_version",
+          "at_date",
+          "departure",
+          "follow_up_departure",
+          "segment_id",
+          "follow_up_assignment",
+          "replayed"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "item_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "follow_up_item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "follow_up_item_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "at_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "departure": {
+            "type": "string",
+            "format": "date"
+          },
+          "follow_up_departure": {
+            "type": "string",
+            "format": "date"
+          },
+          "segment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "follow_up_assignment": {
+            "$ref": "#/components/schemas/BoardAssignment"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "EarlyDepartureStayInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "effective_date",
+          "version"
+        ],
+        "properties": {
+          "effective_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "EarlyDepartureStayResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "item_id",
+          "state",
+          "item_version",
+          "departure",
+          "assignment",
+          "inventory_version",
+          "replayed"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "item_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "departure": {
+            "type": "string",
+            "format": "date"
+          },
+          "assignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "inventory_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PartialDepartureStayInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "guest_ids",
+          "version"
+        ],
+        "properties": {
+          "guest_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "PartialDepartureStayResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "item_id",
+          "state",
+          "item_version",
+          "departed_guest_ids",
+          "replayed"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "item_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "departed_guest_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CheckOutStayInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "CheckOutStayResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "item_id",
+          "state",
+          "item_version",
+          "reservation_state",
+          "reservation_version",
+          "checked_out_at",
+          "segment_ids",
+          "assignment",
+          "financial_clearance_state",
+          "replayed"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "item_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "reservation_state": {
+            "type": "string"
+          },
+          "reservation_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "checked_out_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "segment_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "assignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "financial_clearance_state": {
+            "type": "string",
+            "enum": [
+              "PENDING"
+            ]
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "StayCapability": {
+        "type": "object",
+        "required": [
+          "supported",
+          "reason"
+        ],
+        "properties": {
+          "supported": {
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "StayCapabilities": {
+        "type": "object",
+        "required": [
+          "assign",
+          "check_in",
+          "check_out",
+          "move",
+          "extend",
+          "split",
+          "early_departure",
+          "partial_departure"
+        ],
+        "properties": {
+          "assign": {
+            "$ref": "#/components/schemas/StayCapability"
+          },
+          "check_in": {
+            "$ref": "#/components/schemas/StayCapability"
+          },
+          "check_out": {
+            "$ref": "#/components/schemas/StayCapability"
+          },
+          "move": {
+            "$ref": "#/components/schemas/StayCapability"
+          },
+          "extend": {
+            "$ref": "#/components/schemas/StayCapability"
+          },
+          "split": {
+            "$ref": "#/components/schemas/StayCapability"
+          },
+          "early_departure": {
+            "$ref": "#/components/schemas/StayCapability"
+          },
+          "partial_departure": {
+            "$ref": "#/components/schemas/StayCapability"
+          }
+        },
+        "description": "Server-computed operation support for this stay. When supported is false, reason is a stable machine code and the UI must show a reason and a treatment path instead of hiding the action"
+      },
+      "AllocationReadiness": {
+        "type": "object",
+        "required": [
+          "resource_id",
+          "eligible",
+          "reason"
+        ],
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eligible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/tenants/{tenantId}/properties/{propertyId}/front-desk/board": {
+      "get": {
+        "operationId": "GetFrontDeskBoard",
+        "summary": "GetFrontDeskBoard",
+        "x-permission": "frontdesk.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Date"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Arrivals, departures, in-house stays and rooms with readiness and assignment state; the selected date and property timezone are echoed and blocked rooms are ineligible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/items/{itemId}/assignments": {
+      "post": {
+        "operationId": "AssignRoom",
+        "summary": "AssignRoom",
+        "x-permission": "assignment.manage",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/ItemId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRoomInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Room bound to a confirmed item; dirty or blocked rooms are rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignRoomResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/items/{itemId}/check-in": {
+      "post": {
+        "operationId": "CheckInStay",
+        "summary": "CheckInStay",
+        "x-permission": "stay.checkin",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/ItemId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item and segment moved to IN_HOUSE with one durable STAY_CHECKED_IN event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckInResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/items/{itemId}/move": {
+      "post": {
+        "operationId": "MoveStay",
+        "summary": "MoveStay",
+        "x-permission": "stay.move",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/ItemId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveStayInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Alternative room secured first; previous assignment shortened or cancelled with a STAY_MOVED event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoveStayResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/items/{itemId}/extend": {
+      "post": {
+        "operationId": "ExtendStay",
+        "summary": "ExtendStay",
+        "x-permission": "stay.move",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/ItemId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtendStayInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Departure extended with re-created allocations under the same commitment and a STAY_EXTENDED event; allocation conflicts preserve the old period",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtendStayResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/items/{itemId}/split": {
+      "post": {
+        "operationId": "SplitStay",
+        "summary": "SplitStay",
+        "x-permission": "stay.move",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/ItemId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SplitStayInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Follow-up in-house item and segment created, allocations sliced under a new commitment without overlap, STAY_SPLIT event written",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitStayResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/items/{itemId}/early-departure": {
+      "post": {
+        "operationId": "EarlyDepartureStay",
+        "summary": "EarlyDepartureStay",
+        "x-permission": "stay.move",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/ItemId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EarlyDepartureStayInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item, segment, assignment and allocations shortened to the effective date; past nights untouched and the stay stays IN_HOUSE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EarlyDepartureStayResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/items/{itemId}/partial-departure": {
+      "post": {
+        "operationId": "PartialDepartureStay",
+        "summary": "PartialDepartureStay",
+        "x-permission": "stay.checkout",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/ItemId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartialDepartureStayInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "selected reservation guests marked departed with one STAY_PARTIAL_DEPARTURE event and no money movement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartialDepartureStayResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/items/{itemId}/check-out": {
+      "post": {
+        "operationId": "CheckOutStay",
+        "summary": "CheckOutStay",
+        "x-permission": "stay.checkout",
+        "x-csrf": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/ItemId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckOutStayInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "In-house segments closed, item CHECKED_OUT, assignment COMPLETED, room DIRTY, financial_clearance_state PENDING and one durable STAY_CHECKED_OUT event; operational only with no money movement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckOutStayResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/inbox/exceptions": {
+      "get": {
+        "operationId": "ListChannelExceptions",
+        "summary": "ListChannelExceptions",
+        "x-permission": "channel.reprocess",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Open consumer exceptions for one property with safe details only; no raw payload is returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelExceptionList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  }
+}

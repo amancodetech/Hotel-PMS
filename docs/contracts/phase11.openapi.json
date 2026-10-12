@@ -1,0 +1,1153 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL PMS SAAS - Phase 11 implemented operations",
+    "version": "0.31.0",
+    "description": "Reporting implemented in Phase 11 (P11-01..P11-03) as read-only queries over the operating database. ReadReport keeps the v1 operationId and extends the v1 ReportResult with declared bases, units, denominators, cutoff and the journal reconciliation of financial kinds; ReadTenantReport returns the authorized multi-property portfolio in a single declared currency. CaptureReportSnapshot stores an immutable pickup snapshot. ExportReport/ExportTenantReport create short-lived private CSV exports generated once by the reporting worker, downloadable only by the creator membership with live permission checks, sanitized against spreadsheet formula injection, and expirable/revocable."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "parameters": {
+      "TenantId": {
+        "name": "tenantId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PropertyId": {
+        "name": "propertyId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Csrf": {
+        "name": "x-csrf-token",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 32
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128
+        }
+      },
+      "ExportId": {
+        "name": "exportId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Safe error envelope with a stable code and correlation id",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "correlation_id"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "ReportPeriod": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "date_from",
+          "date_to"
+        ],
+        "properties": {
+          "date_from": {
+            "type": "string",
+            "format": "date"
+          },
+          "date_to": {
+            "type": "string",
+            "format": "date",
+            "description": "Exclusive period end, same convention as departure dates."
+          }
+        }
+      },
+      "ReportInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "period"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "OCCUPANCY",
+              "ADR_REVPAR",
+              "ARRIVALS",
+              "DEPARTURES",
+              "PICKUP",
+              "REVENUE",
+              "TAX",
+              "SETTLEMENTS",
+              "CHANNEL_PERFORMANCE"
+            ]
+          },
+          "period": {
+            "$ref": "#/components/schemas/ReportPeriod"
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "IDR",
+              "USD",
+              null
+            ]
+          },
+          "resource_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 32
+          },
+          "reference_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          }
+        }
+      },
+      "ReportMetric": {
+        "description": "One declared number: unit of measure, basis, numerator and denominator where a ratio applies. A ratio with a zero denominator is null with zero_denominator=true, never a misleading zero.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "label",
+          "value",
+          "unit",
+          "basis",
+          "numerator",
+          "denominator",
+          "zero_denominator",
+          "null_reason"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": "string"
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "PHYSICAL",
+              "OPERATIONAL",
+              "CURRENT_STATE",
+              "ACTIVE_ITEM_NIGHTS",
+              "SNAPSHOT_DIFF_ACTIVE_ITEM_NIGHTS",
+              "POSTED_JOURNAL",
+              "POSTED_CHARGES",
+              "PAYMENT_RECORDS",
+              "CHANNEL_RECORDS"
+            ]
+          },
+          "numerator": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "denominator": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "zero_denominator": {
+            "type": "boolean"
+          },
+          "null_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportRow": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label",
+          "value",
+          "unit"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "state": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ReportCutoff": {
+        "description": "Business day snapshot for the report instant. Financial reports never compare different moments as if one were a deficit.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "business_date",
+          "state",
+          "property_timezone"
+        ],
+        "properties": {
+          "business_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "state": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "property_timezone": {
+            "type": "string"
+          }
+        }
+      },
+      "ReportSnapshotView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "reference_date",
+          "captured_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "reference_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "captured_by_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "summary": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "ReportResult": {
+        "description": "Additive extension of the v1 ReportResult. v1 consumers keep reading report_id, generated_at, currency and rows.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "report_id",
+          "kind",
+          "generated_at",
+          "period",
+          "currency",
+          "cutoff",
+          "data_basis",
+          "metrics",
+          "rows"
+        ],
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "period": {
+            "$ref": "#/components/schemas/ReportPeriod"
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cutoff": {
+            "$ref": "#/components/schemas/ReportCutoff"
+          },
+          "data_basis": {
+            "type": "string",
+            "enum": [
+              "OPERATING_DB"
+            ]
+          },
+          "snapshot": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ReportSnapshotView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportMetric"
+            },
+            "maxItems": 200
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportRow"
+            },
+            "maxItems": 100
+          },
+          "reconciliation": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ReportReconciliation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "CaptureSnapshotResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "snapshot",
+          "replayed"
+        ],
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/ReportSnapshotView"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ReportSnapshotList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportSnapshotView"
+            },
+            "maxItems": 100
+          }
+        }
+      },
+      "ReportReconciliation": {
+        "description": "Same-snapshot cross-check between the posted journal and posted charges. Both sides are read inside one transaction at generated_at; a non-zero delta is shown as a declared correction delta, never as a deficit between different moments.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "journal_source",
+          "currency",
+          "accounts",
+          "reconciled"
+        ],
+        "properties": {
+          "journal_source": {
+            "type": "string",
+            "enum": [
+              "POSTED"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "account_code",
+                "journal_total",
+                "charge_total",
+                "tax_total",
+                "delta",
+                "reconciled"
+              ],
+              "properties": {
+                "account_code": {
+                  "type": "string"
+                },
+                "journal_total": {
+                  "type": "string"
+                },
+                "charge_total": {
+                  "type": "string"
+                },
+                "tax_total": {
+                  "type": "string"
+                },
+                "delta": {
+                  "type": "string"
+                },
+                "reconciled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "reconciled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TenantReportInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "period",
+          "currency"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "PORTFOLIO"
+            ]
+          },
+          "period": {
+            "$ref": "#/components/schemas/ReportPeriod"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "property_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 50
+          }
+        }
+      },
+      "ReportExportView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "format",
+          "state",
+          "property_id",
+          "period",
+          "currency",
+          "created_at",
+          "ready_at",
+          "expires_at",
+          "revoked_at",
+          "content_sha256",
+          "byte_size",
+          "correlation_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "CSV"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "RUNNING",
+              "READY",
+              "FAILED",
+              "EXPIRED",
+              "REVOKED"
+            ]
+          },
+          "property_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "period": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ReportPeriod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ready_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "content_sha256": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "byte_size": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "correlation_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ExportReportInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "period"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "OCCUPANCY",
+              "ADR_REVPAR",
+              "ARRIVALS",
+              "DEPARTURES",
+              "PICKUP",
+              "REVENUE",
+              "TAX",
+              "SETTLEMENTS",
+              "CHANNEL_PERFORMANCE"
+            ]
+          },
+          "period": {
+            "$ref": "#/components/schemas/ReportPeriod"
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "IDR",
+              "USD",
+              null
+            ]
+          },
+          "resource_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 32
+          },
+          "reference_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "CSV"
+            ]
+          }
+        }
+      },
+      "ExportTenantReportInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "period",
+          "currency"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "PORTFOLIO"
+            ]
+          },
+          "period": {
+            "$ref": "#/components/schemas/ReportPeriod"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "CSV"
+            ]
+          }
+        }
+      },
+      "ExportCreatedResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "export",
+          "replayed"
+        ],
+        "properties": {
+          "export": {
+            "$ref": "#/components/schemas/ReportExportView"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ReportExportList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportExportView"
+            },
+            "maxItems": 50
+          }
+        }
+      },
+      "ExportRevocationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "export"
+        ],
+        "properties": {
+          "export": {
+            "$ref": "#/components/schemas/ReportExportView"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/tenants/{tenantId}/properties/{propertyId}/reports/query": {
+      "post": {
+        "operationId": "ReadReport",
+        "summary": "ReadReport",
+        "x-permission": "report.operational.view",
+        "x-csrf": true,
+        "description": "Read-only report over the operating database. Financial kinds additionally require report.financial.view. Every result declares unit, basis, numerator/denominator and the business day cutoff of the same snapshot.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped read-only report result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reports/snapshots": {
+      "post": {
+        "operationId": "CaptureReportSnapshot",
+        "summary": "CaptureReportSnapshot",
+        "x-permission": "report.operational.view",
+        "x-csrf": true,
+        "description": "Appends one immutable pickup snapshot per tenant/property/reference date. Re-capturing the same reference date returns the stored snapshot with replayed=true instead of rewriting history.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Snapshot stored or replayed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureSnapshotResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "reference_date": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "ListReportSnapshots",
+        "summary": "ListReportSnapshots",
+        "x-permission": "report.operational.view",
+        "description": "Lists pickup snapshots of one property, newest first. Read-only.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Snapshot list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportSnapshotList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/reports/query": {
+      "post": {
+        "operationId": "ReadTenantReport",
+        "summary": "ReadTenantReport",
+        "x-permission": "report.operational.view",
+        "x-csrf": true,
+        "description": "Read-only multi-property portfolio in one declared currency. The authorized property set comes from server-side grants; property_ids may only narrow it and any property outside the tenant or the actor scope fails closed.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped multi-property report result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantReportInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reports/exports": {
+      "post": {
+        "operationId": "ExportReport",
+        "summary": "ExportReport",
+        "x-permission": "report.export",
+        "x-csrf": true,
+        "description": "Creates a short-lived private CSV export (202). The reporting worker generates the file once; the creator membership may download it until it expires or is revoked, and the financial kinds keep requiring report.financial.view.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Export accepted for the reporting worker.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportCreatedResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportReportInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/reports/exports": {
+      "post": {
+        "operationId": "ExportTenantReport",
+        "summary": "ExportTenantReport",
+        "x-permission": "report.export",
+        "x-csrf": true,
+        "description": "Creates a short-lived multi-property portfolio CSV export in one declared currency over the authorized property set resolved from the caller's grants.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Export accepted for the reporting worker.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportCreatedResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportTenantReportInput"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "ListReportExports",
+        "summary": "ListReportExports",
+        "x-permission": "report.export",
+        "description": "Lists exports created by the calling membership. property_id selects a property scope; omitting it lists tenant-level portfolio exports only.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Caller-owned export list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportExportList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/reports/exports/{exportId}/download": {
+      "get": {
+        "operationId": "DownloadReportExport",
+        "summary": "DownloadReportExport",
+        "x-permission": "report.export",
+        "description": "Downloads the sanitized CSV of one READY export owned by the calling membership. Fails closed after permission or membership revoke, and returns 410 after expiry/revocation. CSV cells that could start a formula are prefixed with an apostrophe.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/ExportId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/reports/exports/{exportId}/revocation": {
+      "post": {
+        "operationId": "RevokeReportExport",
+        "summary": "RevokeReportExport",
+        "x-permission": "report.export",
+        "x-csrf": true,
+        "description": "Revokes one caller-owned export and deletes its stored content immediately.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/ExportId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Export revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportRevocationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  }
+}

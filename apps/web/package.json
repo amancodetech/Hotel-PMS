@@ -1,0 +1,32 @@
+{
+  "name": "@hotel/web",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "dev": "vite --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@hotel/contracts": "workspace:*",
+    "@hotel/i18n": "workspace:*",
+    "@hotel/ui": "workspace:*",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-router": "7.18.3",
+    "@tanstack/react-query": "5.102.8",
+    "react-i18next": "15.7.4",
+    "i18next": "25.10.10",
+    "@mui/material": "7.3.11",
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "lucide-react": "0.577.0"
+  },
+  "devDependencies": {
+    "vite": "7.3.6",
+    "@vitejs/plugin-react": "5.2.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
+  }
+}

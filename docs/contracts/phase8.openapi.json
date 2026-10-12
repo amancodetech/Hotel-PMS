@@ -1,0 +1,5867 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL PMS SAAS - Phase 8 implemented operations",
+    "version": "0.25.0",
+    "description": "Operations implemented in Phase 8 packages P08-01..P08-06 (backend): finance core, folios, collections, corrections, billing (invoice/credit-note series with duplicate-safe numbering, EX-03 gate for production issuance, and cashier sessions that record the counted truth and never erase the variance), and the P08-06 integration of financial clearance with operational checkout (departed is not settled: CLEARED requires posted payments/refunds or a routed liability to an authorized COMPANY payer with a documented collection plan), external-booking settlement listing with gross/net/commission kept separate, and long-stay schedules/packages surfaced through the clearance view. Account/invoice/cashier UI stays for the remaining work."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "parameters": {
+      "TenantId": {
+        "name": "tenantId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PropertyId": {
+        "name": "propertyId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Date": {
+        "name": "date",
+        "in": "query",
+        "required": false,
+        "description": "Optional business date in the property timezone; defaults to the current local date",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "Csrf": {
+        "name": "x-csrf-token",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 32
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128
+        }
+      },
+      "FolioId": {
+        "name": "folioId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ChargeId": {
+        "name": "chargeId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ScheduleId": {
+        "name": "scheduleId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "EntitlementId": {
+        "name": "entitlementId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "DepositId": {
+        "name": "depositId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PaymentId": {
+        "name": "paymentId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "RefundId": {
+        "name": "refundId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "InvoiceId": {
+        "name": "invoiceId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "SessionId": {
+        "name": "sessionId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ReservationId": {
+        "name": "reservationId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Fixed error code, localized message key, correlation id and bounded details without secrets",
+        "headers": {
+          "X-Correlation-Id": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "correlation_id"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "Money": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "amount",
+          "currency"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string",
+            "pattern": "^\\d{1,18}(\\.\\d{1,6})?$"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          }
+        }
+      },
+      "BusinessDay": {
+        "type": "object",
+        "required": [
+          "id",
+          "business_date",
+          "state",
+          "version",
+          "opened_at",
+          "closed_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "AUDIT_PREPARING",
+              "AUDIT_VALIDATION",
+              "CLOSING",
+              "CLOSED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "BusinessDayResult": {
+        "type": "object",
+        "required": [
+          "date",
+          "timezone",
+          "business_day"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "business_day": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BusinessDay"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "NightAuditInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "business_date"
+        ],
+        "properties": {
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "NightAuditResult": {
+        "type": "object",
+        "required": [
+          "closed",
+          "opened",
+          "business_day",
+          "replayed"
+        ],
+        "properties": {
+          "closed": {
+            "$ref": "#/components/schemas/BusinessDay"
+          },
+          "opened": {
+            "$ref": "#/components/schemas/BusinessDay"
+          },
+          "business_day": {
+            "$ref": "#/components/schemas/BusinessDay"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OpenFolioInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "payer_label",
+          "currency"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "GUEST",
+              "COMPANY",
+              "HOUSE",
+              "OWNER"
+            ]
+          },
+          "payer_label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          }
+        }
+      },
+      "Folio": {
+        "type": "object",
+        "required": [
+          "id",
+          "reservation_id",
+          "kind",
+          "payer_label",
+          "currency",
+          "state",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reservation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "GUEST",
+              "COMPANY",
+              "HOUSE",
+              "OWNER"
+            ]
+          },
+          "payer_label": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "CLOSED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "FolioCharge": {
+        "type": "object",
+        "required": [
+          "id",
+          "folio_id",
+          "business_date",
+          "currency",
+          "kind",
+          "account_code",
+          "net_amount",
+          "tax_amount",
+          "tax_policy",
+          "source_kind",
+          "source_ref",
+          "journal_id",
+          "posted_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "POS",
+              "ACCRUAL",
+              "PACKAGE",
+              "DAMAGE_DEPOSIT",
+              "ROUTING",
+              "TAX"
+            ]
+          },
+          "account_code": {
+            "type": "string"
+          },
+          "net_amount": {
+            "type": "string"
+          },
+          "tax_amount": {
+            "type": "string"
+          },
+          "tax_policy": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "policy_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_kind": {
+            "type": "string"
+          },
+          "source_ref": {
+            "type": "string"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "journal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "posted_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FolioResult": {
+        "type": "object",
+        "required": [
+          "folio"
+        ],
+        "properties": {
+          "folio": {
+            "type": "object",
+            "required": [
+              "id",
+              "reservation_id",
+              "kind",
+              "payer_label",
+              "currency",
+              "state",
+              "version"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reservation_id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "GUEST",
+                  "COMPANY",
+                  "HOUSE",
+                  "OWNER"
+                ]
+              },
+              "payer_label": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string",
+                "enum": [
+                  "IDR",
+                  "USD"
+                ]
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "OPEN",
+                  "CLOSED"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      },
+      "FolioListResult": {
+        "type": "object",
+        "required": [
+          "folios"
+        ],
+        "properties": {
+          "folios": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "reservation_id",
+                "kind",
+                "payer_label",
+                "currency",
+                "state",
+                "version"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "reservation_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "GUEST",
+                    "COMPANY",
+                    "HOUSE",
+                    "OWNER"
+                  ]
+                },
+                "payer_label": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string",
+                  "enum": [
+                    "IDR",
+                    "USD"
+                  ]
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "OPEN",
+                    "CLOSED"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        }
+      },
+      "FolioDetail": {
+        "type": "object",
+        "required": [
+          "folio",
+          "charges",
+          "allocations",
+          "deposits",
+          "entitlements",
+          "schedules",
+          "totals",
+          "payments",
+          "refunds"
+        ],
+        "properties": {
+          "folio": {
+            "type": "object",
+            "required": [
+              "id",
+              "reservation_id",
+              "kind",
+              "payer_label",
+              "currency",
+              "state",
+              "version"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reservation_id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "GUEST",
+                  "COMPANY",
+                  "HOUSE",
+                  "OWNER"
+                ]
+              },
+              "payer_label": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string",
+                "enum": [
+                  "IDR",
+                  "USD"
+                ]
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "OPEN",
+                  "CLOSED"
+                ]
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
+          "charges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "folio_id",
+                "business_date",
+                "currency",
+                "kind",
+                "account_code",
+                "net_amount",
+                "tax_amount",
+                "tax_policy",
+                "source_kind",
+                "source_ref",
+                "journal_id",
+                "posted_at"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "folio_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "business_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "currency": {
+                  "type": "string",
+                  "enum": [
+                    "IDR",
+                    "USD"
+                  ]
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "MANUAL",
+                    "POS",
+                    "ACCRUAL",
+                    "PACKAGE",
+                    "DAMAGE_DEPOSIT",
+                    "ROUTING",
+                    "TAX"
+                  ]
+                },
+                "account_code": {
+                  "type": "string"
+                },
+                "net_amount": {
+                  "type": "string"
+                },
+                "tax_amount": {
+                  "type": "string"
+                },
+                "tax_policy": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "policy_snapshot_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_kind": {
+                  "type": "string"
+                },
+                "source_ref": {
+                  "type": "string"
+                },
+                "period_start": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "period_end": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "journal_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "posted_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "charge_id",
+                "payer_folio_id",
+                "amount",
+                "journal_id"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "charge_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "payer_folio_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "amount": {
+                  "type": "string"
+                },
+                "journal_id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "deposits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "kind",
+                "method",
+                "currency",
+                "amount",
+                "applied",
+                "released",
+                "held",
+                "external_reference",
+                "source_ref",
+                "journal_id"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DEPOSIT",
+                    "DAMAGE"
+                  ]
+                },
+                "method": {
+                  "type": "string",
+                  "enum": [
+                    "CASH",
+                    "BANK_TRANSFER",
+                    "EXTERNAL_POS"
+                  ]
+                },
+                "currency": {
+                  "type": "string",
+                  "enum": [
+                    "IDR",
+                    "USD"
+                  ]
+                },
+                "amount": {
+                  "type": "string"
+                },
+                "applied": {
+                  "type": "string"
+                },
+                "released": {
+                  "type": "string"
+                },
+                "held": {
+                  "type": "string"
+                },
+                "external_reference": {
+                  "type": "string"
+                },
+                "source_ref": {
+                  "type": "string"
+                },
+                "journal_id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "entitlements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "code",
+                "quantity_total",
+                "quantity_consumed",
+                "unit_net_amount",
+                "unit_tax_amount",
+                "currency",
+                "state"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "quantity_total": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "quantity_consumed": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unit_net_amount": {
+                  "type": "string"
+                },
+                "unit_tax_amount": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string",
+                  "enum": [
+                    "IDR",
+                    "USD"
+                  ]
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "ACTIVE",
+                    "EXHAUSTED",
+                    "CANCELLED"
+                  ]
+                }
+              }
+            }
+          },
+          "schedules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "code",
+                "account_code",
+                "quantity",
+                "net_amount",
+                "tax_amount",
+                "currency",
+                "interval",
+                "starts_on",
+                "state",
+                "version"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "account_code": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "net_amount": {
+                  "type": "string"
+                },
+                "tax_amount": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string",
+                  "enum": [
+                    "IDR",
+                    "USD"
+                  ]
+                },
+                "interval": {
+                  "type": "string",
+                  "enum": [
+                    "DAY",
+                    "WEEK",
+                    "MONTH"
+                  ]
+                },
+                "starts_on": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "ends_on": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "ACTIVE",
+                    "STOPPED"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "totals": {
+            "$ref": "#/components/schemas/FolioTotals"
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "folio_id",
+                "method",
+                "currency",
+                "amount",
+                "business_date",
+                "external_reference",
+                "source_ref",
+                "state"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "folio_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "method": {
+                  "type": "string",
+                  "enum": [
+                    "CASH",
+                    "BANK_TRANSFER",
+                    "OTA_SETTLEMENT",
+                    "EXTERNAL_POS"
+                  ]
+                },
+                "currency": {
+                  "type": "string",
+                  "enum": [
+                    "IDR",
+                    "USD"
+                  ]
+                },
+                "amount": {
+                  "type": "string"
+                },
+                "gross_amount": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "commission_amount": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "business_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "external_reference": {
+                  "type": "string"
+                },
+                "evidence_ref": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_ref": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "UNKNOWN",
+                    "SUCCEEDED",
+                    "FAILED"
+                  ]
+                },
+                "journal_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "reconciled_at": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "replayed": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "refunds": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "payment_id",
+                "folio_id",
+                "currency",
+                "amount",
+                "reason",
+                "state",
+                "approval_id"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "payment_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "folio_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "currency": {
+                  "type": "string",
+                  "enum": [
+                    "IDR",
+                    "USD"
+                  ]
+                },
+                "amount": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "RESERVED",
+                    "PENDING",
+                    "SUCCEEDED",
+                    "FAILED"
+                  ]
+                },
+                "approval_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "journal_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "replayed": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PostChargeInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "folio_id",
+          "business_date",
+          "money",
+          "source_ref"
+        ],
+        "properties": {
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "tax_money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "tax_policy": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "policy_snapshot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "account_code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,31}$"
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "memo": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
+      "RouteChargeInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "allocations"
+        ],
+        "properties": {
+          "allocations": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "payer_folio_id",
+                "money"
+              ],
+              "properties": {
+                "payer_folio_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "money": {
+                  "$ref": "#/components/schemas/Money"
+                }
+              }
+            }
+          },
+          "memo": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
+      "RouteChargeResult": {
+        "type": "object",
+        "required": [
+          "charge_id",
+          "journal_id",
+          "allocations"
+        ],
+        "properties": {
+          "charge_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "journal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "payer_folio_id",
+                "amount"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "payer_folio_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "amount": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CreateScheduleInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "money",
+          "interval",
+          "starts_on"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "account_code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,31}$"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "tax_money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "tax_policy": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "interval": {
+            "type": "string",
+            "enum": [
+              "DAY",
+              "WEEK",
+              "MONTH"
+            ]
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date"
+          },
+          "ends_on": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ChargeSchedule": {
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "account_code",
+          "quantity",
+          "net_amount",
+          "tax_amount",
+          "currency",
+          "interval",
+          "starts_on",
+          "state",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "account_code": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "net_amount": {
+            "type": "string"
+          },
+          "tax_amount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "interval": {
+            "type": "string",
+            "enum": [
+              "DAY",
+              "WEEK",
+              "MONTH"
+            ]
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date"
+          },
+          "ends_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "STOPPED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "PostSchedulePeriodInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "business_date"
+        ],
+        "properties": {
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "PostedCharge": {
+        "type": "object",
+        "required": [
+          "id",
+          "folio_id",
+          "business_date",
+          "currency",
+          "kind",
+          "account_code",
+          "net_amount",
+          "tax_amount",
+          "tax_policy",
+          "source_kind",
+          "source_ref",
+          "journal_id",
+          "posted_at",
+          "replayed"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "MANUAL",
+              "POS",
+              "ACCRUAL",
+              "PACKAGE",
+              "DAMAGE_DEPOSIT",
+              "ROUTING",
+              "TAX"
+            ]
+          },
+          "account_code": {
+            "type": "string"
+          },
+          "net_amount": {
+            "type": "string"
+          },
+          "tax_amount": {
+            "type": "string"
+          },
+          "tax_policy": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "policy_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_kind": {
+            "type": "string"
+          },
+          "source_ref": {
+            "type": "string"
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "journal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "posted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreatePackageInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "quantity_total",
+          "unit_money"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "account_code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,31}$"
+          },
+          "quantity_total": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "unit_money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "unit_tax_money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "tax_policy": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          }
+        }
+      },
+      "PackageEntitlement": {
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "quantity_total",
+          "quantity_consumed",
+          "unit_net_amount",
+          "unit_tax_amount",
+          "currency",
+          "state"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "quantity_total": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "quantity_consumed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unit_net_amount": {
+            "type": "string"
+          },
+          "unit_tax_amount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "EXHAUSTED",
+              "CANCELLED"
+            ]
+          }
+        }
+      },
+      "ConsumePackageInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "quantity",
+          "source_ref",
+          "business_date"
+        ],
+        "properties": {
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ConsumePackageResult": {
+        "type": "object",
+        "required": [
+          "entitlement_id",
+          "quantity",
+          "quantity_consumed",
+          "quantity_total",
+          "state",
+          "charge",
+          "consumption_id"
+        ],
+        "properties": {
+          "entitlement_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "quantity_consumed": {
+            "type": "integer"
+          },
+          "quantity_total": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "EXHAUSTED"
+            ]
+          },
+          "charge": {
+            "$ref": "#/components/schemas/FolioCharge"
+          },
+          "consumption_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "CollectDepositInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "method",
+          "money",
+          "business_date",
+          "external_reference",
+          "source_ref"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "DEPOSIT",
+              "DAMAGE"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "CASH",
+              "BANK_TRANSFER",
+              "EXTERNAL_POS"
+            ]
+          },
+          "money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "external_reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "evidence_ref": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "DepositResult": {
+        "type": "object",
+        "required": [
+          "id",
+          "folio_id",
+          "kind",
+          "method",
+          "currency",
+          "amount",
+          "held_amount",
+          "external_reference",
+          "source_ref",
+          "journal_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "DEPOSIT",
+              "DAMAGE"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "CASH",
+              "BANK_TRANSFER",
+              "EXTERNAL_POS"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "held_amount": {
+            "type": "string"
+          },
+          "external_reference": {
+            "type": "string"
+          },
+          "source_ref": {
+            "type": "string"
+          },
+          "journal_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ApplyDepositInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "charge_id",
+          "money",
+          "business_date",
+          "reason"
+        ],
+        "properties": {
+          "charge_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "ReleaseDepositInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "money",
+          "business_date",
+          "reason"
+        ],
+        "properties": {
+          "money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "DepositApplicationResult": {
+        "type": "object",
+        "required": [
+          "id",
+          "deposit_id",
+          "kind",
+          "amount",
+          "held_remaining"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deposit_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "charge_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "APPLY",
+              "RELEASE"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "held_remaining": {
+            "type": "string"
+          }
+        }
+      },
+      "FolioPayment": {
+        "type": "object",
+        "required": [
+          "id",
+          "folio_id",
+          "method",
+          "currency",
+          "amount",
+          "business_date",
+          "external_reference",
+          "source_ref",
+          "state"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "CASH",
+              "BANK_TRANSFER",
+              "OTA_SETTLEMENT",
+              "EXTERNAL_POS"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "gross_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "commission_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "external_reference": {
+            "type": "string"
+          },
+          "evidence_ref": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_ref": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "SUCCEEDED",
+              "FAILED"
+            ]
+          },
+          "journal_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reconciled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PaymentListResult": {
+        "type": "object",
+        "required": [
+          "payments"
+        ],
+        "properties": {
+          "payments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "folio_id",
+                "method",
+                "currency",
+                "amount",
+                "business_date",
+                "external_reference",
+                "source_ref",
+                "state"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "folio_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "method": {
+                  "type": "string",
+                  "enum": [
+                    "CASH",
+                    "BANK_TRANSFER",
+                    "OTA_SETTLEMENT",
+                    "EXTERNAL_POS"
+                  ]
+                },
+                "currency": {
+                  "type": "string",
+                  "enum": [
+                    "IDR",
+                    "USD"
+                  ]
+                },
+                "amount": {
+                  "type": "string"
+                },
+                "gross_amount": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "commission_amount": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "business_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "external_reference": {
+                  "type": "string"
+                },
+                "evidence_ref": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_ref": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "UNKNOWN",
+                    "SUCCEEDED",
+                    "FAILED"
+                  ]
+                },
+                "journal_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "reconciled_at": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "replayed": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PaymentResult": {
+        "type": "object",
+        "required": [
+          "payment",
+          "journal_lines"
+        ],
+        "properties": {
+          "payment": {
+            "type": "object",
+            "required": [
+              "id",
+              "folio_id",
+              "method",
+              "currency",
+              "amount",
+              "business_date",
+              "external_reference",
+              "source_ref",
+              "state"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "folio_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "CASH",
+                  "BANK_TRANSFER",
+                  "OTA_SETTLEMENT",
+                  "EXTERNAL_POS"
+                ]
+              },
+              "currency": {
+                "type": "string",
+                "enum": [
+                  "IDR",
+                  "USD"
+                ]
+              },
+              "amount": {
+                "type": "string"
+              },
+              "gross_amount": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "commission_amount": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "business_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "external_reference": {
+                "type": "string"
+              },
+              "evidence_ref": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "source_ref": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "UNKNOWN",
+                  "SUCCEEDED",
+                  "FAILED"
+                ]
+              },
+              "journal_id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reconciled_at": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "replayed": {
+                "type": "boolean"
+              }
+            }
+          },
+          "journal_lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "line_no",
+                "account_code",
+                "debit",
+                "credit"
+              ],
+              "properties": {
+                "line_no": {
+                  "type": "integer"
+                },
+                "account_code": {
+                  "type": "string"
+                },
+                "debit": {
+                  "type": "string"
+                },
+                "credit": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "RecordPaymentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "folio_id",
+          "method",
+          "money",
+          "business_date",
+          "external_reference",
+          "source_ref"
+        ],
+        "properties": {
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "CASH",
+              "BANK_TRANSFER",
+              "OTA_SETTLEMENT",
+              "EXTERNAL_POS"
+            ]
+          },
+          "money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "gross_money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "commission_money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "external_reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "evidence_ref": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "certainty": {
+            "type": "string",
+            "enum": [
+              "CONFIRMED",
+              "UNKNOWN"
+            ]
+          }
+        }
+      },
+      "ReconcilePaymentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "outcome"
+        ],
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "SUCCEEDED",
+              "FAILED"
+            ]
+          },
+          "reconciliation_reference": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "FolioRefund": {
+        "type": "object",
+        "required": [
+          "id",
+          "payment_id",
+          "folio_id",
+          "currency",
+          "amount",
+          "reason",
+          "state",
+          "approval_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "RESERVED",
+              "PENDING",
+              "SUCCEEDED",
+              "FAILED"
+            ]
+          },
+          "approval_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "journal_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RequestRefundInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "money",
+          "reason"
+        ],
+        "properties": {
+          "money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "ResolveRefundInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "outcome"
+        ],
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "SUCCEEDED",
+              "FAILED"
+            ]
+          },
+          "approval_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "external_reference": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "reconciliation_reference": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "ReverseChargeInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "ReverseChargeResult": {
+        "type": "object",
+        "required": [
+          "charge_id",
+          "original_journal_id",
+          "journal_id",
+          "reason"
+        ],
+        "properties": {
+          "charge_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "original_journal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "journal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "AdjustmentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "money",
+          "direction",
+          "reason"
+        ],
+        "properties": {
+          "money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "INCREASE",
+              "DECREASE"
+            ]
+          },
+          "account_code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,31}$"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "AdjustmentResult": {
+        "type": "object",
+        "required": [
+          "charge_id",
+          "journal_id",
+          "direction",
+          "amount"
+        ],
+        "properties": {
+          "charge_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "journal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "INCREASE",
+              "DECREASE"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          }
+        }
+      },
+      "FxSnapshotInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pair",
+          "rate",
+          "effective_at",
+          "source"
+        ],
+        "properties": {
+          "pair": {
+            "type": "string",
+            "enum": [
+              "IDR/USD",
+              "USD/IDR"
+            ]
+          },
+          "rate": {
+            "type": "string",
+            "pattern": "^\\d{1,12}(\\.\\d{1,8})?$"
+          },
+          "effective_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        }
+      },
+      "RecordFxSnapshotInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pair",
+          "rate",
+          "effective_at",
+          "source",
+          "approval_id"
+        ],
+        "properties": {
+          "pair": {
+            "type": "string",
+            "enum": [
+              "IDR/USD",
+              "USD/IDR"
+            ]
+          },
+          "rate": {
+            "type": "string",
+            "pattern": "^\\d{1,12}(\\.\\d{1,8})?$"
+          },
+          "effective_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "approval_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "FxSnapshot": {
+        "type": "object",
+        "required": [
+          "id",
+          "pair",
+          "rate",
+          "effective_at",
+          "source",
+          "approval_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pair": {
+            "type": "string",
+            "enum": [
+              "IDR/USD",
+              "USD/IDR"
+            ]
+          },
+          "rate": {
+            "type": "string"
+          },
+          "effective_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string"
+          },
+          "approval_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "FxSnapshotListResult": {
+        "type": "object",
+        "required": [
+          "fx_snapshots"
+        ],
+        "properties": {
+          "fx_snapshots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "pair",
+                "rate",
+                "effective_at",
+                "source",
+                "approval_id"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "pair": {
+                  "type": "string",
+                  "enum": [
+                    "IDR/USD",
+                    "USD/IDR"
+                  ]
+                },
+                "rate": {
+                  "type": "string"
+                },
+                "effective_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "approval_id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FxApprovalResult": {
+        "type": "object",
+        "required": [
+          "id",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "FolioInvoice": {
+        "type": "object",
+        "required": [
+          "id",
+          "folio_id",
+          "series",
+          "number",
+          "kind",
+          "currency",
+          "net_amount",
+          "tax_amount",
+          "total_amount",
+          "account_code",
+          "state",
+          "source_ref",
+          "business_date"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "series": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "SYNTHETIC",
+              "PRODUCTION"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "net_amount": {
+            "type": "string"
+          },
+          "tax_amount": {
+            "type": "string"
+          },
+          "total_amount": {
+            "type": "string"
+          },
+          "tax_policy": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "account_code": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ISSUED"
+            ]
+          },
+          "source_ref": {
+            "type": "string"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "journal_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FolioCreditNote": {
+        "type": "object",
+        "required": [
+          "id",
+          "invoice_id",
+          "series",
+          "number",
+          "currency",
+          "amount",
+          "reason",
+          "source_ref",
+          "journal_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "invoice_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "series": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "amount": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "source_ref": {
+            "type": "string"
+          },
+          "journal_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "InvoiceListResult": {
+        "type": "object",
+        "required": [
+          "invoices"
+        ],
+        "properties": {
+          "invoices": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "folio_id",
+                    "series",
+                    "number",
+                    "kind",
+                    "currency",
+                    "net_amount",
+                    "tax_amount",
+                    "total_amount",
+                    "account_code",
+                    "state",
+                    "source_ref",
+                    "business_date"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "folio_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "series": {
+                      "type": "string"
+                    },
+                    "number": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "SYNTHETIC",
+                        "PRODUCTION"
+                      ]
+                    },
+                    "currency": {
+                      "type": "string",
+                      "enum": [
+                        "IDR",
+                        "USD"
+                      ]
+                    },
+                    "net_amount": {
+                      "type": "string"
+                    },
+                    "tax_amount": {
+                      "type": "string"
+                    },
+                    "total_amount": {
+                      "type": "string"
+                    },
+                    "tax_policy": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "account_code": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "ISSUED"
+                      ]
+                    },
+                    "source_ref": {
+                      "type": "string"
+                    },
+                    "business_date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "journal_id": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "issued_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "credit_notes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "invoice_id",
+                          "series",
+                          "number",
+                          "currency",
+                          "amount",
+                          "reason",
+                          "source_ref",
+                          "journal_id"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "invoice_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "series": {
+                            "type": "string"
+                          },
+                          "number": {
+                            "type": "string"
+                          },
+                          "currency": {
+                            "type": "string",
+                            "enum": [
+                              "IDR",
+                              "USD"
+                            ]
+                          },
+                          "amount": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "source_ref": {
+                            "type": "string"
+                          },
+                          "journal_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "issued_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "IssueInvoiceInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "folio_id",
+          "series",
+          "source_ref",
+          "business_date",
+          "money"
+        ],
+        "properties": {
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "series": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "SYNTHETIC",
+              "PRODUCTION"
+            ]
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "tax_money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "tax_policy": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "account_code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,31}$"
+          }
+        }
+      },
+      "IssueCreditNoteInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "money",
+          "reason",
+          "source_ref"
+        ],
+        "properties": {
+          "money": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        }
+      },
+      "CashierSession": {
+        "type": "object",
+        "required": [
+          "id",
+          "currency",
+          "state",
+          "opening_float"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "COUNTING",
+              "RECONCILED",
+              "CLOSED"
+            ]
+          },
+          "opening_float": {
+            "type": "string"
+          },
+          "expected_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "counted_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "variance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "type": "integer"
+          }
+        }
+      },
+      "OpenCashierInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "opening_float": {
+            "type": "string",
+            "pattern": "^\\d{1,18}(\\.\\d{1,6})?$"
+          }
+        }
+      },
+      "CountCashierInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "counted_money"
+        ],
+        "properties": {
+          "counted_money": {
+            "type": "string",
+            "pattern": "^\\d{1,18}(\\.\\d{1,6})?$"
+          }
+        }
+      },
+      "CashierSessionListResult": {
+        "type": "object",
+        "required": [
+          "cashier_sessions"
+        ],
+        "properties": {
+          "cashier_sessions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "currency",
+                "state",
+                "opening_float"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "currency": {
+                  "type": "string",
+                  "enum": [
+                    "IDR",
+                    "USD"
+                  ]
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "OPEN",
+                    "COUNTING",
+                    "RECONCILED",
+                    "CLOSED"
+                  ]
+                },
+                "opening_float": {
+                  "type": "string"
+                },
+                "expected_amount": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "counted_amount": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "variance": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "version": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FolioTotals": {
+        "type": "object",
+        "required": [
+          "charges_total",
+          "adjustments_total",
+          "routed_out",
+          "routed_in",
+          "deposits_held",
+          "deposits_applied",
+          "payments_total",
+          "refunds_total",
+          "balance_due"
+        ],
+        "properties": {
+          "charges_total": {
+            "type": "string"
+          },
+          "adjustments_total": {
+            "type": "string"
+          },
+          "routed_out": {
+            "type": "string"
+          },
+          "routed_in": {
+            "type": "string"
+          },
+          "deposits_held": {
+            "type": "string"
+          },
+          "deposits_applied": {
+            "type": "string"
+          },
+          "payments_total": {
+            "type": "string"
+          },
+          "refunds_total": {
+            "type": "string"
+          },
+          "balance_due": {
+            "type": "string"
+          }
+        }
+      },
+      "ClearanceSchedule": {
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "account_code",
+          "quantity",
+          "net_amount",
+          "tax_amount",
+          "currency",
+          "interval",
+          "starts_on",
+          "state",
+          "version",
+          "posted_periods"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "account_code": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "net_amount": {
+            "type": "string"
+          },
+          "tax_amount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "interval": {
+            "type": "string",
+            "enum": [
+              "DAY",
+              "WEEK",
+              "MONTH"
+            ]
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date"
+          },
+          "ends_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "STOPPED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "posted_periods": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "next_period_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ClearanceFolio": {
+        "type": "object",
+        "required": [
+          "folio",
+          "totals",
+          "charges",
+          "allocations",
+          "payments",
+          "refunds",
+          "invoices",
+          "schedules",
+          "entitlements"
+        ],
+        "properties": {
+          "folio": {
+            "$ref": "#/components/schemas/Folio"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/FolioTotals"
+          },
+          "charges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FolioCharge"
+            }
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "charge_id",
+                "payer_folio_id",
+                "amount",
+                "journal_id"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "charge_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "payer_folio_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "amount": {
+                  "type": "string"
+                },
+                "journal_id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FolioPayment"
+            }
+          },
+          "refunds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FolioRefund"
+            }
+          },
+          "invoices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FolioInvoice"
+            }
+          },
+          "schedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClearanceSchedule"
+            }
+          },
+          "entitlements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageEntitlement"
+            }
+          }
+        }
+      },
+      "ReservationClearance": {
+        "type": "object",
+        "required": [
+          "reservation",
+          "external_booking",
+          "folios",
+          "totals_by_currency",
+          "balanced",
+          "outstanding",
+          "credit",
+          "settled"
+        ],
+        "properties": {
+          "reservation": {
+            "type": "object",
+            "required": [
+              "id",
+              "state",
+              "version",
+              "source",
+              "financial_clearance_state",
+              "departed"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "state": {
+                "type": "string"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "DIRECT",
+                  "OTA",
+                  "IMPORT"
+                ]
+              },
+              "channel_connection_id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "external_booking_key": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "financial_clearance_state": {
+                "type": "string",
+                "enum": [
+                  "PENDING",
+                  "CLEARED",
+                  "NOT_REQUIRED"
+                ]
+              },
+              "financial_cleared_at": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "financial_clearance_basis": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "SETTLED",
+                      "TRANSFER_TO_PAYER"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "financial_clearance_reference": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "departed": {
+                "type": "boolean",
+                "description": "Operational departure only; never implies the reservation is financially settled"
+              }
+            }
+          },
+          "external_booking": {
+            "anyOf": [
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "connection_id",
+                  "channel_key",
+                  "external_booking_id",
+                  "state"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "connection_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "channel_key": {
+                    "type": "string"
+                  },
+                  "external_booking_id": {
+                    "type": "string"
+                  },
+                  "provider_booking_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVE",
+                      "CANCELLED",
+                      "EXCEPTION"
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "folios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClearanceFolio"
+            }
+          },
+          "totals_by_currency": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/FolioTotals"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "currency"
+                  ],
+                  "properties": {
+                    "currency": {
+                      "type": "string",
+                      "enum": [
+                        "IDR",
+                        "USD"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "balanced": {
+            "type": "boolean",
+            "description": "Every reservation folio has balance_due exactly zero"
+          },
+          "outstanding": {
+            "type": "boolean",
+            "description": "At least one folio has a positive balance due"
+          },
+          "credit": {
+            "type": "boolean",
+            "description": "At least one folio has a credit balance that needs a refund before settlement"
+          },
+          "settled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SettleClearanceInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "basis"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "SETTLED",
+              "TRANSFER_TO_PAYER"
+            ]
+          },
+          "payer_folio_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Required for TRANSFER_TO_PAYER: an open COMPANY city-ledger folio not linked to this reservation"
+          },
+          "collection_plan_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Required for TRANSFER_TO_PAYER: documented collection plan reference"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "SettleClearanceResult": {
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "state",
+          "reservation_version",
+          "financial_clearance_state",
+          "transfer_allocations",
+          "replayed"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "reservation_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "financial_clearance_state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "CLEARED",
+              "NOT_REQUIRED"
+            ]
+          },
+          "financial_cleared_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "financial_clearance_basis": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "SETTLED",
+                  "TRANSFER_TO_PAYER"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "financial_clearance_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "financial_clearance_payer_folio_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "transfer_allocations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "charge_id",
+                "payer_folio_id",
+                "amount"
+              ],
+              "properties": {
+                "charge_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "payer_folio_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "amount": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ExternalSettlement": {
+        "type": "object",
+        "required": [
+          "id",
+          "folio_id",
+          "method",
+          "currency",
+          "amount",
+          "business_date",
+          "external_reference",
+          "source_ref",
+          "state",
+          "linked_to_external_booking"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "folio_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "folio_reservation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "OTA_SETTLEMENT"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "IDR",
+              "USD"
+            ]
+          },
+          "amount": {
+            "type": "string",
+            "description": "Net transfer amount; no currency conversion is applied"
+          },
+          "gross_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "commission_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "external_reference": {
+            "type": "string"
+          },
+          "evidence_ref": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_ref": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "SUCCEEDED",
+              "FAILED"
+            ]
+          },
+          "journal_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reservation": {
+            "anyOf": [
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "state",
+                  "source"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "state": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "DIRECT",
+                      "OTA",
+                      "IMPORT"
+                    ]
+                  },
+                  "channel_connection_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "external_booking_key": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "external_booking": {
+            "anyOf": [
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "channel_key",
+                  "state"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "channel_key": {
+                    "type": "string"
+                  },
+                  "provider_booking_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "state": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVE",
+                      "CANCELLED",
+                      "EXCEPTION"
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "linked_to_external_booking": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ExternalSettlementListResult": {
+        "type": "object",
+        "required": [
+          "settlements"
+        ],
+        "properties": {
+          "settlements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExternalSettlement"
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/tenants/{tenantId}/properties/{propertyId}/finance/business-day": {
+      "get": {
+        "operationId": "GetBusinessDay",
+        "summary": "GetBusinessDay",
+        "x-permission": "folio.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Date"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The property-local business date, timezone and the requested or active business day",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessDayResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/night-audits": {
+      "post": {
+        "operationId": "RunNightAudit",
+        "summary": "RunNightAudit",
+        "x-permission": "business_day.close",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested day is closed and the next property-local day is opened atomically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NightAuditResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NightAuditInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/folios": {
+      "get": {
+        "operationId": "ListFolios",
+        "summary": "ListFolios",
+        "x-permission": "folio.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Folios in the property, optionally filtered by reservation or state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolioListResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "OpenFolio",
+        "summary": "OpenFolio",
+        "x-permission": "folio.charge",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The opened folio with its currency and payer label",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolioResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenFolioInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/folios/{folioId}": {
+      "get": {
+        "operationId": "GetFolio",
+        "summary": "GetFolio",
+        "x-permission": "folio.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/FolioId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The folio with charges, routed allocations, deposits, package entitlements, schedules and derived totals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolioDetail"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/charges": {
+      "post": {
+        "operationId": "PostCharge",
+        "summary": "PostCharge",
+        "x-permission": "folio.charge",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The posted charge with its immutable policy snapshot and journal reference",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolioCharge"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostChargeInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/charges/{chargeId}/allocations": {
+      "post": {
+        "operationId": "RouteCharge",
+        "summary": "RouteCharge",
+        "x-permission": "folio.charge",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ChargeId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payer allocations without duplicating the posted revenue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteChargeResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteChargeInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/folios/{folioId}/charge-schedules": {
+      "post": {
+        "operationId": "CreateChargeSchedule",
+        "summary": "CreateChargeSchedule",
+        "x-permission": "folio.charge",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/FolioId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The recurring charge schedule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChargeSchedule"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateScheduleInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/charge-schedules/{scheduleId}/post": {
+      "post": {
+        "operationId": "PostSchedulePeriod",
+        "summary": "PostSchedulePeriod",
+        "x-permission": "folio.charge",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ScheduleId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One accrual period posted once; a duplicate period cannot post twice",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostedCharge"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostSchedulePeriodInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/folios/{folioId}/packages": {
+      "post": {
+        "operationId": "CreatePackageEntitlement",
+        "summary": "CreatePackageEntitlement",
+        "x-permission": "folio.charge",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/FolioId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The package entitlement with its quantity and unit price",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackageEntitlement"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePackageInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/package-entitlements/{entitlementId}/consumptions": {
+      "post": {
+        "operationId": "ConsumePackage",
+        "summary": "ConsumePackage",
+        "x-permission": "folio.charge",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/EntitlementId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Package consumption that posts one charge and cannot be duplicated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsumePackageResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsumePackageInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/folios/{folioId}/deposits": {
+      "post": {
+        "operationId": "CollectDeposit",
+        "summary": "CollectDeposit",
+        "x-permission": "folio.charge",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/FolioId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A deposit or damage deposit held as a liability, never revenue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectDepositInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/deposits/{depositId}/applications": {
+      "post": {
+        "operationId": "ApplyDeposit",
+        "summary": "ApplyDeposit",
+        "x-permission": "folio.charge",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/DepositId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A justified deposit application against an outstanding charge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositApplicationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyDepositInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/deposits/{depositId}/releases": {
+      "post": {
+        "operationId": "ReleaseDeposit",
+        "summary": "ReleaseDeposit",
+        "x-permission": "folio.charge",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/DepositId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A justified release that moves the liability to refund clearing, not revenue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositApplicationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseDepositInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/payments": {
+      "get": {
+        "operationId": "ListPayments",
+        "summary": "ListPayments",
+        "x-permission": "folio.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payments in the property, optionally filtered by folio or state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentListResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "RecordPayment",
+        "summary": "RecordPayment",
+        "x-permission": "payment.record",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A recorded collection; OTA settlements keep gross, net and commission separate and UNKNOWN stays unresolved without a journal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolioPayment"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordPaymentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/payments/{paymentId}": {
+      "get": {
+        "operationId": "GetPayment",
+        "summary": "GetPayment",
+        "x-permission": "folio.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/PaymentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The payment with its journal lines when resolved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/payments/{paymentId}/reconcile": {
+      "post": {
+        "operationId": "ReconcilePayment",
+        "summary": "ReconcilePayment",
+        "x-permission": "payment.record",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/PaymentId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resolves an UNKNOWN payment once; SUCCEEDED posts the single collection journal and FAILED posts none",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolioPayment"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReconcilePaymentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/payments/{paymentId}/refunds": {
+      "post": {
+        "operationId": "RequestRefund",
+        "summary": "RequestRefund",
+        "x-permission": "payment.refund.request",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/PaymentId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A refund reserved against the collected amount with its own independent approval request; no payout is claimed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolioRefund"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestRefundInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/refunds/{refundId}/resolve": {
+      "post": {
+        "operationId": "ResolveRefund",
+        "summary": "ResolveRefund",
+        "x-permission": "payment.refund.request",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/RefundId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resolves a reserved refund once: PENDING waits for evidence, SUCCEEDED posts the single refund journal with an approved independent approval, FAILED releases the reservation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolioRefund"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveRefundInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/charges/{chargeId}/reversal": {
+      "post": {
+        "operationId": "ReverseCharge",
+        "summary": "ReverseCharge",
+        "x-permission": "folio.adjust",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ChargeId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A single full reversal journal; the original posted charge is never edited or deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReverseChargeResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReverseChargeInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/charges/{chargeId}/adjustments": {
+      "post": {
+        "operationId": "PostAdjustment",
+        "summary": "PostAdjustment",
+        "x-permission": "folio.adjust",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ChargeId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A documented adjustment journal linked to the original; negative and positive adjustments never rewrite the original",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdjustmentResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdjustmentInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/fx-snapshots/requests": {
+      "post": {
+        "operationId": "RequestFxSnapshotApproval",
+        "summary": "RequestFxSnapshotApproval",
+        "x-permission": "folio.adjust",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Requests an independent approval for a documented settlement rate; no live FX provider and no conversion posting",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FxApprovalResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FxSnapshotInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/fx-snapshots": {
+      "get": {
+        "operationId": "ListFxSnapshots",
+        "summary": "ListFxSnapshots",
+        "x-permission": "folio.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Approved FX snapshots in the property",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FxSnapshotListResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "RecordFxSnapshot",
+        "summary": "RecordFxSnapshot",
+        "x-permission": "folio.adjust",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Records one approved FX snapshot; one snapshot per approval and no direct exchange",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FxSnapshot"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordFxSnapshotInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/invoices": {
+      "get": {
+        "operationId": "ListInvoices",
+        "summary": "ListInvoices",
+        "x-permission": "folio.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Issued invoices with their credit notes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceListResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "IssueInvoice",
+        "summary": "IssueInvoice",
+        "x-permission": "invoice.issue",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One issued invoice with a duplicate-safe series number; a PRODUCTION series without an approved EX-03 profile is rejected while synthetic issuance stays allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolioInvoice"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueInvoiceInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/invoices/{invoiceId}/credit-notes": {
+      "post": {
+        "operationId": "IssueCreditNote",
+        "summary": "IssueCreditNote",
+        "x-permission": "invoice.issue",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/InvoiceId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A linked credit note that never exceeds the invoice total and posts one correction journal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolioCreditNote"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueCreditNoteInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/cashier-sessions": {
+      "get": {
+        "operationId": "ListCashierSessions",
+        "summary": "ListCashierSessions",
+        "x-permission": "folio.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cashier sessions in the property",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashierSessionListResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "OpenCashierSession",
+        "summary": "OpenCashierSession",
+        "x-permission": "cashier.operate",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One open session per currency with its opening float",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashierSession"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenCashierInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/cashier-sessions/{sessionId}/count": {
+      "post": {
+        "operationId": "CountCashierSession",
+        "summary": "CountCashierSession",
+        "x-permission": "cashier.operate",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/SessionId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The counted truth recorded beside the expected amount; the variance is stored and never erased",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashierSession"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CountCashierInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/cashier-sessions/{sessionId}/close": {
+      "post": {
+        "operationId": "CloseCashierSession",
+        "summary": "CloseCashierSession",
+        "x-permission": "cashier.operate",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/SessionId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Closes a reconciled session and preserves its variance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashierSession"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/reservations/{reservationId}/clearance": {
+      "get": {
+        "operationId": "GetReservationClearance",
+        "summary": "GetReservationClearance",
+        "description": "Tracks the reservation liability after departure: folio balances (payments, refunds, deposits, routing and corrections), invoices, long-stay schedules/packages and the external booking link. departed=true never means settled.",
+        "x-permission": "folio.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clearance state and the posted financial facts behind it, grouped by currency without conversion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationClearance"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "SettleClearance",
+        "summary": "SettleClearance",
+        "description": "Resolves a PENDING clearance only with evidence: SETTLED requires every reservation folio at balance zero through posted payments/deposits/refunds/routing; TRANSFER_TO_PAYER routes the outstanding balances to an open COMPANY city-ledger folio with a documented collection plan reference. Departed alone never clears.",
+        "x-permission": "folio.charge",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ReservationId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The cleared reservation with its basis, plan reference and transfer allocations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettleClearanceResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-csrf": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettleClearanceInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/external-settlements": {
+      "get": {
+        "operationId": "ListExternalSettlements",
+        "summary": "ListExternalSettlements",
+        "description": "Lists OTA settlements with gross, net and commission kept separate, their reference/evidence and their external-booking link. No FX conversion is applied or implied.",
+        "x-permission": "folio.read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "name": "reservation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "UNKNOWN",
+                "SUCCEEDED",
+                "FAILED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "External settlements linked to their folio, reservation and external booking when one exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalSettlementListResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  }
+}

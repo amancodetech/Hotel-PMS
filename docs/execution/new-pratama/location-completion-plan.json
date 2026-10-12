@@ -1,0 +1,139 @@
+{
+  "status": "IMPLEMENTATION_READY",
+  "confirmed_by_user": "9 October 2026",
+  "assignments": [
+    {
+      "resource_code": "V01-R01",
+      "location_code": "LOC-V01-G"
+    },
+    {
+      "resource_code": "V01-R02",
+      "location_code": "LOC-V01-U"
+    },
+    {
+      "resource_code": "V01-R03",
+      "location_code": "LOC-V01-U"
+    },
+    {
+      "resource_code": "V01-R04",
+      "location_code": "LOC-V01-U"
+    },
+    {
+      "resource_code": "V03-R01",
+      "location_code": "LOC-V03-G"
+    },
+    {
+      "resource_code": "V03-R02",
+      "location_code": "LOC-V03-U"
+    },
+    {
+      "resource_code": "V03-R03",
+      "location_code": "LOC-V03-U"
+    },
+    {
+      "resource_code": "V04-R01",
+      "location_code": "LOC-V04-G"
+    },
+    {
+      "resource_code": "V04-R02",
+      "location_code": "LOC-V04-U"
+    },
+    {
+      "resource_code": "V04-R03",
+      "location_code": "LOC-V04-U"
+    },
+    {
+      "resource_code": "V05-R01",
+      "location_code": "LOC-V05-G"
+    },
+    {
+      "resource_code": "V05-R02",
+      "location_code": "LOC-V05-U"
+    },
+    {
+      "resource_code": "V05-R03",
+      "location_code": "LOC-V05-U"
+    },
+    {
+      "resource_code": "KL01",
+      "location_code": "LOC-SHARED-UPPER"
+    },
+    {
+      "resource_code": "KL02",
+      "location_code": "LOC-SHARED-UPPER"
+    },
+    {
+      "resource_code": "KL03",
+      "location_code": "LOC-SHARED-UPPER"
+    },
+    {
+      "resource_code": "KL04",
+      "location_code": "LOC-SHARED-UPPER"
+    },
+    {
+      "resource_code": "KL05",
+      "location_code": "LOC-SHARED-UPPER"
+    },
+    {
+      "resource_code": "KL06",
+      "location_code": "LOC-SHARED-UPPER"
+    }
+  ],
+  "new_location": {
+    "code": "LOC-SHARED-UPPER",
+    "name": "Upper floor / rooftop",
+    "parent_code": "LOC-SHARED",
+    "kind": "FLOOR",
+    "display_order": 3
+  },
+  "floor_number": null,
+  "new_resource": {
+    "code": "V04-R03",
+    "display_label": "Villa 4 / Kamar 3",
+    "type": "ROOM",
+    "capacity": 3,
+    "required_parent_resource_code": "V04",
+    "unit_details": {
+      "bedrooms_count": 1,
+      "notes_source": "Copy unchanged approved room notes from existing V04-R02 baseline"
+    }
+  },
+  "new_product": {
+    "code": "NP-V04-R03",
+    "name": "Villa 4 / Kamar 3",
+    "kind": "ROOM",
+    "occupancy_adults_min": 1,
+    "occupancy_adults_max": 2,
+    "occupancy_children_max": 1,
+    "meal_plan": "NONE"
+  },
+  "existing_whole_product_id": "27050e6e-ad18-4c9c-9ff0-cd0fa9d8cda2",
+  "whole_product_occupancy": {
+    "occupancy_adults_max": 6,
+    "occupancy_children_max": 3
+  },
+  "container_capacity": 9,
+  "composition_change_recommendation": {
+    "effective_from": "2026-10-09",
+    "effective_to": "2031-10-08",
+    "not_yet_executed": true,
+    "preserve_old_window": "2026-10-08..2026-10-08"
+  },
+  "expected": {
+    "locations": 44,
+    "resources": 97,
+    "products": 97,
+    "room_atoms": 73,
+    "villa_containers": 24,
+    "composition_version_rows": 25,
+    "composition_status_active_rows": 25,
+    "composition_windows_effective_on_2026_10_09": 24,
+    "historical_leaf_rows": 69,
+    "current_effective_leaf_rows": 67
+  },
+  "blocker": "No source blocker reported after build-2 PASS, independent PG suite PASS and owned fixture repair pg-fix-1 3/3 PASS. Coordinator backup, clone rehearsal and actual application remain pending.",
+  "container_unit_details_update": {
+    "bedrooms_count": 3,
+    "preserve_other_keys": true
+  }
+}

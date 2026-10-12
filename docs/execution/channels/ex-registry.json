@@ -1,0 +1,111 @@
+{
+  "registry_version": 1,
+  "updated_at": "2026-09-17",
+  "governing_docs": [
+    "docs/27_readiness_gates.md",
+    "docs/35_live_channels_runbook.md",
+    "docs/22_connectivity_evidence.md"
+  ],
+  "boundary": "Local preparation only. No external action, purchase, account creation, provider contact or live channel until a separate user authorization message per EX item. Code approval is never purchase approval.",
+  "items": [
+    {
+      "id": "EX-01",
+      "requirement": "عقد Channex وتأكيد قدرة توزيع D-20 لكل قناة/نوع، credentials آمنة ونتيجة certification",
+      "owner_role": "صاحب المنتج والمزود",
+      "status": "BLOCKED_EXTERNAL",
+      "evidence_refs": [
+        "docs/22_connectivity_evidence.md",
+        "docs/33_channel_extension_contract.md",
+        "docs/execution/channels/provider-approval-package.md"
+      ],
+      "missing_evidence": [
+        "أهلية العقد الإندونيسي/white-label مكتوبة من المزود",
+        "تأكيد قدرات D-20 لكل قناة ونوع مورد (حصرية الحصة، فصل القنوات، دليل السحب)",
+        "نتيجة برنامج PMS certification ونسخة Adapter المثبتة",
+        "secret_ref مخزن أسرار staging/production مع تدوير وإبطال مختبرين"
+      ],
+      "next_step": "رسالة تفويض خارجي منفصلة من المستخدم تسمح بمخاطبة المزود وطلب العرض وبدء الاعتماد؛ لا شراء ولا حساب قبلها",
+      "owned_since": "2026-09-13",
+      "live_tested": false,
+      "authorization_status": "NOT_AUTHORIZED"
+    },
+    {
+      "id": "EX-02",
+      "requirement": "تفويض المنشأة والنطاق وIDs وموعد النقل والحجوزات القائمة وأرصدة البداية والمصدر القديم",
+      "owner_role": "مسؤول المنشأة عبر صاحب المنتج",
+      "status": "BLOCKED_EXTERNAL",
+      "evidence_refs": [
+        "docs/35_live_channels_runbook.md",
+        "docs/execution/channels/pilot-scope.md"
+      ],
+      "missing_evidence": [
+        "منشأة pilot حقيقية موقعة التفويض ونطاق الحصص المسموح",
+        "Property/Room/Rate IDs ونسخ Mapping",
+        "ملف الحجوزات المستقبلية وBlocks وأرصدة البداية مع تقرير اكتمال",
+        "موعد cutover ومسؤول writer الواحد وبديله"
+      ],
+      "next_step": "تسمية منشأة pilot وتعيين مسؤولها بعد تفويض خارجي منفصل؛ لا استخدام بيانات حقيقية قبل ذلك",
+      "owned_since": "2026-09-13",
+      "live_tested": false,
+      "authorization_status": "NOT_AUTHORIZED"
+    },
+    {
+      "id": "EX-03",
+      "requirement": "سياسة ضريبة وفاتورة واحتفاظ ومعالجة بيانات للسوق الفعلي وعقود المزودين",
+      "owner_role": "مختص امتثال/محاسب محلي مخول وصاحب المنتج",
+      "status": "BLOCKED_EXTERNAL",
+      "evidence_refs": [
+        "docs/21_indonesia_launch.md",
+        "docs/23_v1_decisions.md"
+      ],
+      "missing_evidence": [
+        "ملف ضريبي وفاتورة معتمد للسوق الإندونيسي",
+        "سياسة احتفاظ ومعالجة بيانات نزلاء موقعة",
+        "عقود معالجة بيانات مع المزودين الخارجيين"
+      ],
+      "next_step": "تعيين المختص المحلي المخول وتفويض إعداد الملف؛ يبقى إصدار الفواتير الإنتاجية مرفوضاً حتى الاعتماد",
+      "owned_since": "2026-09-13",
+      "live_tested": false,
+      "authorization_status": "NOT_AUTHORIZED"
+    },
+    {
+      "id": "EX-04",
+      "requirement": "ملف أداء مقاس ضمن البنية والتكلفة، اختبار restore وإبطال ومراقبة",
+      "owner_role": "الفريق المنفذ ومراجع مستقل",
+      "status": "IN_PROGRESS_LOCAL",
+      "evidence_refs": [
+        "docs/execution/P13-02.md",
+        "docs/execution/P13-06.md",
+        "docs/execution/channels/pilot-monitoring-template.md"
+      ],
+      "missing_evidence": [
+        "قياس أحمال staging بموارد حقيقية (يتطلب تفويض موارد ونشر)",
+        "تقرير reviewer مستقل لملف الحدود",
+        "اختبار إبطال أسرار/تدوير على مخزن أسرار إنتاجي"
+      ],
+      "next_step": "إكمال rehearsal الاستعادة محلياً (P13-02) ثم قياس staging بعد تفويض خارجي منفصل",
+      "owned_since": "2026-09-17",
+      "live_tested": false,
+      "authorization_status": "NOT_AUTHORIZED"
+    },
+    {
+      "id": "EX-05",
+      "requirement": "موافقة تكلفة السحابة وخدمات الاتصال وremote المستودع عند الحاجة",
+      "owner_role": "صاحب المنتج",
+      "status": "BLOCKED_EXTERNAL",
+      "evidence_refs": [
+        "docs/22_connectivity_evidence.md",
+        "docs/execution/channels/provider-approval-package.md"
+      ],
+      "missing_evidence": [
+        "عرض سعر Channex محدد لنوع منشآت pilot وعدد الوحدات",
+        "تقدير تكلفة AWS Jakarta (RDS/ElastiCache/S3/Secrets/CloudWatch) وحصص الإنفاق",
+        "موافقة إنفاق خطية قبل إنشاء أي مورد"
+      ],
+      "next_step": "طلب عرض سعر رسمي وموافقة إنفاق بعد تفويض خارجي منفصل؛ لا موارد ولا اشتراك قبلها",
+      "owned_since": "2026-09-13",
+      "live_tested": false,
+      "authorization_status": "NOT_AUTHORIZED"
+    }
+  ]
+}

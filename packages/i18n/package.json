@@ -1,0 +1,21 @@
+{
+  "name": "@hotel/i18n",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "watch": "tsc --watch -p tsconfig.json"
+  },
+  "dependencies": {
+    "i18next": "25.10.10"
+  },
+  "devDependencies": {}
+}

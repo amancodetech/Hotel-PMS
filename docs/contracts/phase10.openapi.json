@@ -1,0 +1,823 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOTEL PMS SAAS - Phase 10 implemented operations",
+    "version": "0.29.0",
+    "description": "Night audit and business day closing implemented in Phase 10 (P10-01..P10-03): exception list with owner and checkpoints, CLOSING barrier with one nightly charge per stay and resumable worker checkpoints, and the day screen progress/error/retry/run log. RunNightAudit itself stays in the Phase 8 contract; this contract adds the queue, overview, retry and exception-resolution surface."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "parameters": {
+      "TenantId": {
+        "name": "tenantId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PropertyId": {
+        "name": "propertyId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "RunId": {
+        "name": "runId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ExceptionId": {
+        "name": "exceptionId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "Csrf": {
+        "name": "x-csrf-token",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 32
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128
+        }
+      },
+      "Date": {
+        "name": "date",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Safe error envelope with a stable code and correlation id",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "correlation_id"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "NightAuditBusinessDay": {
+        "description": "Business day snapshot for the night audit screen.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "AUDIT_PREPARING",
+              "AUDIT_VALIDATION",
+              "CLOSING",
+              "CLOSED"
+            ]
+          },
+          "version": {
+            "type": "integer"
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "NightAuditRunView": {
+        "description": "One night audit run keyed by property and business date.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "RUNNING",
+              "VALIDATION_FAILED",
+              "FAILED",
+              "SUCCEEDED"
+            ]
+          },
+          "current_step": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "steps_total": {
+            "type": "integer"
+          },
+          "steps_done": {
+            "type": "integer"
+          },
+          "attempt": {
+            "type": "integer"
+          },
+          "last_error_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "correlation_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "NightAuditStepView": {
+        "description": "One resumable step with its committed checkpoint.",
+        "type": "object",
+        "properties": {
+          "step_key": {
+            "type": "string",
+            "enum": [
+              "PREPARE",
+              "ARRIVALS",
+              "DEPARTURES",
+              "NIGHTLY_CHARGES",
+              "BALANCES",
+              "PAYMENTS_RECON",
+              "VALIDATE",
+              "CLOSING_BARRIER",
+              "CLOSE_DAY",
+              "FINALIZE"
+            ]
+          },
+          "step_order": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "RUNNING",
+              "DONE",
+              "FAILED",
+              "SKIPPED"
+            ]
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "checkpoint": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          },
+          "last_error_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "NightAuditExceptionView": {
+        "description": "Allowed exception with a traceable owner and resolution reason.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "step_key": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "ARRIVAL_NOT_RESOLVED",
+              "DEPARTURE_NOT_RESOLVED",
+              "MISSING_FOLIO",
+              "MISSING_PRICE",
+              "RATE_CURRENCY_MISMATCH",
+              "OUTSTANDING_BALANCE",
+              "PAYMENT_UNKNOWN"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "BLOCKING",
+              "WARNING"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "ACKNOWLEDGED",
+              "RESOLVED"
+            ]
+          },
+          "subject_type": {
+            "type": "string"
+          },
+          "subject_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "owner_membership_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "owner_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resolution_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resolved_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "resolved_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "NightAuditEventView": {
+        "description": "Run log entry (safe fields only).",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "step_key": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "INFO",
+              "WARN",
+              "ERROR"
+            ]
+          },
+          "event": {
+            "type": "string"
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "actor_kind": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "SERVICE"
+            ]
+          },
+          "actor_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "NightAuditOverviewResult": {
+        "description": "Business day, current run, steps, exceptions and run log.",
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "active_business_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "business_day": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NightAuditBusinessDay"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NightAuditRunView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NightAuditStepView"
+            }
+          },
+          "exceptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NightAuditExceptionView"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NightAuditEventView"
+            }
+          },
+          "open_blocking": {
+            "type": "integer"
+          }
+        }
+      },
+      "StartNightAuditInput": {
+        "type": "object",
+        "required": [
+          "business_date"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "business_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "StartNightAuditResult": {
+        "description": "Queued night audit run (the worker executes the steps).",
+        "type": "object",
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/NightAuditRunView"
+          },
+          "created": {
+            "type": "boolean"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "NightAuditRunList": {
+        "description": "Recent night audit runs for the property.",
+        "type": "object",
+        "properties": {
+          "runs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NightAuditRunView"
+            }
+          }
+        }
+      },
+      "NightAuditResult": {
+        "description": "Synchronous RunNightAudit result (Phase 8 fields plus steps and exceptions).",
+        "type": "object",
+        "properties": {
+          "closed": {
+            "$ref": "#/components/schemas/NightAuditBusinessDay"
+          },
+          "opened": {
+            "$ref": "#/components/schemas/NightAuditBusinessDay"
+          },
+          "business_day": {
+            "$ref": "#/components/schemas/NightAuditBusinessDay"
+          },
+          "run": {
+            "$ref": "#/components/schemas/NightAuditRunView"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NightAuditStepView"
+            }
+          },
+          "exceptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NightAuditExceptionView"
+            }
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ResolveNightAuditExceptionInput": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "owner_membership_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "owner_label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "NightAuditExceptionResult": {
+        "description": "Exception after acknowledgement with its owner.",
+        "type": "object",
+        "properties": {
+          "exception": {
+            "$ref": "#/components/schemas/NightAuditExceptionView"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/tenants/{tenantId}/properties/{propertyId}/night-audits": {
+      "get": {
+        "operationId": "GetNightAuditOverview",
+        "summary": "GetNightAuditOverview",
+        "x-permission": "folio.read",
+        "description": "Business day, current run, step checkpoints, exceptions and run log for a date (defaults to the active business day).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Date"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Overview snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NightAuditOverviewResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/night-audits/runs": {
+      "get": {
+        "operationId": "ListNightAuditRuns",
+        "summary": "ListNightAuditRuns",
+        "x-permission": "folio.read",
+        "description": "Recent runs for the property ordered by business date.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Run history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NightAuditRunList"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "StartNightAudit",
+        "summary": "StartNightAudit",
+        "x-permission": "business_day.close",
+        "x-csrf": true,
+        "description": "Creates (or reuses) the run for the business date as PENDING; the worker executes the resumable steps.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartNightAuditInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Run queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartNightAuditResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/night-audits/runs/{runId}/retry": {
+      "post": {
+        "operationId": "RetryNightAudit",
+        "summary": "RetryNightAudit",
+        "x-permission": "business_day.close",
+        "x-csrf": true,
+        "description": "Requeues a FAILED/VALIDATION_FAILED run and resumes from the first non-DONE checkpoint; a SUCCEEDED run replays its stored result without a second effect.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/RunId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Retried run result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NightAuditResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/properties/{propertyId}/night-audits/exceptions/{exceptionId}/resolution": {
+      "post": {
+        "operationId": "ResolveNightAuditException",
+        "summary": "ResolveNightAuditException",
+        "x-permission": "business_day.close",
+        "x-csrf": true,
+        "description": "Acknowledges one OPEN exception with a traceable owner and a reason; acknowledged blocking exceptions no longer block the close (property policy, not a server default).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/PropertyId"
+          },
+          {
+            "$ref": "#/components/parameters/ExceptionId"
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveNightAuditExceptionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Acknowledged exception",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NightAuditExceptionResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  }
+}
